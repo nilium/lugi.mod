@@ -49,12 +49,17 @@ Type LExposedType
 	End Function
 	
 	' Initializes an LExposedType with information for the type passed
-	' Will throw an exception if an LExposedType for the typeid has already been created and initialized
+	' The object returned may not be the one you originally sent the initialize message to
+	' If there is already an instance for this type, that instance will be returned instead
+	' of proceeding with intialization
 	Method InitWithTypeID:LExposedType(tid:TTypeId)
-		typeid = tid
+		If tid = ObjectTypeId Or typeid = StringTypeId Or typeid._class = ArrayTypeId._class Then
+			Return Null
+		EndIf
 		
-		If _exposedTypes.Contains(_exposedTypes) Then
-			Throw "Attempt to initialize duplicate LExposedType for type "+tid.Name()
+		Local lnk:TLink = _exposedTypes.FindLink(tid)
+		If lnk Then
+			Return LExposedType(lnk.Value())
 		EndIf
 		
 		exposed = typeid.Metadata(LUGI_META_EXPOSE).ToInt()>0
