@@ -71,7 +71,16 @@ Type LExposedType
 			Return LExposedType(lnk.Value())
 		EndIf
 		
+		typeid = tid
+		
 		exposed = typeid.Metadata(LUGI_META_EXPOSE).ToInt()>0
+		
+		If Not exposed Then
+			Return Null
+		EndIf
+		
+		DebugLog "Building type info for "+tid.Name()
+		
 		static = typeid.Metadata(LUGI_META_STATIC).ToInt()>0
 		noclass = typeid.Metadata(LUGI_META_NOCLASS).ToInt()>0
 		hidefields = typeid.Metadata(LUGI_META_HIDEFIELDS).ToInt()>0
@@ -99,9 +108,16 @@ Type LExposedType
 	End Method
 	
 	Method PreInitBlock:String()
+		If Not exposed Then
+			Return Null
+		EndIf
+		
 		Local outs$=""
 		
+		DebugLog "Pre-init block for "+typeid.Name()
+		
 		If Not (static And noclass) Then
+			DebugLog "Instance methods"
 			For Local m:LExposedMethod = EachIn methods
 				Local initString$ = m.PreInitBlock()
 				If initString Then
@@ -111,6 +127,7 @@ Type LExposedType
 		EndIf
 		
 		If Not noclass Then
+			DebugLog "Fields"
 			For Local f:LExposedField = EachIn fields
 				Local initString$ = f.PreInitBlock()
 				If initString Then
@@ -123,37 +140,73 @@ Type LExposedType
 	End Method
 	
 	Method PostInitBlock:String()
+		If Not exposed Then
+			Return Null
+		EndIf
+		
+		DebugLog "Post-init block for "+typeid.Name()
+		
 		If Not (nonew Or (static And noclass)) Then
-			Return 	"~tlua_pushlightuserdata lua_vm, Byte Ptr(TTypeId.ForName(~q" + typeid.Name() + "~q)._class)" + ..
-					"~tlua_pushcclosure lua_vm, p_lugi_new_object, 1"
+			Return 	"~tlua_pushlightuserdata lua_vm, Byte Ptr(TTypeId.ForName(~q" + typeid.Name() + "~q)._class)~n" + ..
+					"~tlua_pushcclosure lua_vm, p_lugi_new_object, 1~n"
 		ElseIf static And Not noclass Then
 			Return	"~t"
 		EndIf
 	End Method
 	
 	Method MethodImplementations:String()
+		If Not exposed Then
+			Return Null
+		EndIf
+		
+		DebugLog "Method implementations for "+typeid.Name()
+		
 		Local m:LExposedMethod
 		Local outs$
 		Local instMethod% = Not (static And noclass)
 		Local block$
 		
 		For m = EachIn methods
+			Local parentImp:LExposedMethod = __methodExposedInParent(m)
+			
+			If m <> parentImp Then
+				Continue
+			EndIf
+			
 			block = m.Implementation(instMethod)
 			If block Then
-				outs :+ "~n~n"+block
+				outs :+ "~n"+block+"~n"
 			EndIf
 		Next
 		
 		Return outs
 	End Method
 	
-	Method _exposedInParent:Int(m:TMethod)
-		Local name$ = m.Name().ToLower()
+	Method __methodExposedInParent:LExposedMethod(current:LExposedMethod)
+		Local name$ = current.methodid.Name().ToLower()
 		
 		Local typ:TTypeId = typeid.SuperType()
+		Local parentImp:LExposedMethod
 		While typ
+			Local exp:LExposedType = ForType(typ)
 			
+			If exp Then
+				For Local m:LExposedMethod = EachIn exp.methods
+					If m.methodid.Name().ToLower() = name Then
+						parentImp = m
+						Exit	' go onto next parent
+					EndIf
+				Next
+			EndIf
+			
+			typ = typ.SuperType()
 		Wend
+		
+		If Not parentImp Then
+			Return current
+		Else
+			Return parentImp
+		EndIf
 	End Method
 	
 	Method __initMethods()
@@ -165,7 +218,9 @@ Type LExposedType
 		
 		' Build list of exposed methods
 		For Local m:TMethod = EachIn typeid.Methods()
-			
+			If "sendmessage^compare^new^delete^tostring".Find(m.Name().ToLower()) = -1 Then
+				methods.AddLast(New LExposedMethod.InitWithMethod(m, typeid))
+			EndIf
 		Next
 	End Method
 	
@@ -176,14 +231,18 @@ Type LExposedType
 			Return
 		EndIf
 		
+		' Build list of exposed fields
 		For Local f:TField = EachIn typeid.Fields()
-			
+			fields.AddLast(New LExposedField.InitWithField(f, typeid))
 		Next
 	End Method
 End Type
 
 ' Builds up the information for all types
 Function BuildTypeInfo()
+	DebugLog "Building type info..."
+	TTypeID._Update()
+	_buildTypeInfo(ObjectTypeId.DerivedTypes())
 End Function
 
 Private
