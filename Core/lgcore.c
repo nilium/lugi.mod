@@ -30,6 +30,23 @@ extern "C" {
 #endif
 
 
+/**************************************************************************************************
+**********/// Internal metamethods
+
+static int lugi_le_object(lua_State *state);			// lua: a <= b
+static int lugi_lt_object(lua_State *state);			// lua: a < b
+static int lugi_eq_object(lua_State *state);			// lua: a == b
+static int lugi_index_object(lua_State *state);			// lua: object[key], object.key, object:key
+static int lugi_newindex_object(lua_State *state);		// lua: object[key] = value, object.key = value
+#ifndef THREADED                                                
+static int lugi_gc_object(lua_State *state);			// BBObject userdata collected by Lua
+#endif
+
+
+
+/**************************************************************************************************
+**********/// Debugging macros
+
 //////// Error string utilities
 
 #define _LINESTR(S) #S
@@ -37,6 +54,11 @@ extern "C" {
 #define FILELOC __FILE__ ":" LINESTR(__LINE__)
 
 #define ERRORSTR(S) FILELOC S
+
+
+
+/**************************************************************************************************
+**********/// Type access
 
 //////// Field access
 
@@ -54,8 +76,12 @@ typedef union {
 } bmx_field;
 
 
-//////// Internal list of exposed functions and methods
 
+/**************************************************************************************************
+**********/// Data structures for the internal registry of methods/fields for classes
+
+
+/// Type of registry item (field or instance method)
 typedef enum {
 	FIELDTYPE,
 	METHODTYPE
@@ -70,8 +96,8 @@ struct s_glueinfo
 	union {
 		lua_CFunction fn; // method
 		struct {
-			unsigned short field_type;
-			unsigned short field_offset;
+			unsigned short field_type;		// the type of field
+			unsigned short field_offset;	// the offset of the field in the object (char*)obj+field_offset
 		};
 	};
 	char *name;	// method name
@@ -83,7 +109,9 @@ struct s_glueinfo
 static glueinfo_t *lugi_g_infohead = NULL;
 
 
-//////// Keys into the Lua registry
+
+/**************************************************************************************************
+**********/// Light userdata keys into the Lua registry
 
 // the values of these variables is completely irrelevant, as the addresses of the variables are used
 // as keys into the registry table
@@ -92,14 +120,16 @@ static void *bmx_object_key = NULL;
 static void *bmx_table_key = NULL;
 
 
-//////// Glue-specific API
+
+/**************************************************************************************************
+**********/// Initialization API (considered private during runtime)
 
 // Initializes the glue code for use in the lua_State provided
 // In short, the function will initialize the generic BMax object metatable (handles comparisons,
 // garbage collection, and field/method access [provided by a hidden virtual method table in the
 // registry]) and creates the virtual method table for all classes as well as making global methods
 // accessible.
-void lugi_init(lua_State *state) {
+void p_lugi_init(lua_State *state) {
 	bmx_metatable = &bmx_metatable;
 	bmx_object_key = &bmx_object_key;
 	
@@ -126,33 +156,37 @@ void lugi_init(lua_State *state) {
 		}
 		else
 		{
+			// retrieve the virtual method table for class
 			lua_pushlightuserdata(state, info->clas);
-			
 			lua_gettable(state, LUA_REGISTRYINDEX);
+			
 			if ( lua_type(state, -1) != LUA_TTABLE ) {
+				// if the VMT doesn't exist, create it
 				lua_pop(state, 1);
+				
 				lua_newtable(state);
 				lua_pushlightuserdata(state, info->clas);
-				lua_pushvalue(state, -2); // push another reference to the new table to the top
-				lua_settable(state, LUA_REGISTRYINDEX); // afterward, a reference to the table remains after inserting it into the registry
+				// push another reference to the new table to the top
+				lua_pushvalue(state, -2);
+				// afterward, a reference to the table remains after inserting it into the registry
+				lua_settable(state, LUA_REGISTRYINDEX);
 			}
-			else
-			{
-			}
+			
 			switch(info->type) {
 				case METHODTYPE:
 				lua_pushcclosure(state, info->fn, 0);
 				break;
 				
 				case FIELDTYPE:
-				lua_pushinteger(state, ((int)info->field_offset)|(((int)info->field_type)<<16));
+				lua_pushinteger(state, ((int)info->field_offset & 0xFF) | ((int)info->field_type << 16));
 				break;
 				
 				default:
-				luaL_error(state, ERRORSTR("@lugi_init: Unrecognized glue info type"));
+				luaL_error(state, ERRORSTR("@p_lugi_init: Unrecognized glue info type"));
 				return;
 				break;
 			}
+			
 			lua_setfield(state, -2, info->name); // insert the closure into the class table
 			lua_pop(state, 1); // pop the class table
 		}
@@ -178,26 +212,39 @@ void lugi_init(lua_State *state) {
 	lua_setfield(state, -2, "__lt");
 	lua_pushcclosure(state, lugi_eq_object, 0); // a == b
 	lua_setfield(state, -2, "__lq");
+	// index
 	lua_pushcclosure(state, lugi_index_object, 0); // a[b]
 	lua_setfield(state, -2, "__index");
+	// newindex
 	lua_pushcclosure(state, lugi_newindex_object, 0); // a[b] = c
 	lua_setfield(state, -2, "__newindex");
 	
+#ifndef THREADED
+	// t.__gc
+	lua_pushcclosure(state, lugi_gc_object, 0);
+	lua_setfield(state, -2, "__gc");
+#endif
+	
 	lua_settable(state, LUA_REGISTRYINDEX);
 	
+	
+	// reset the top of the stack so it's clean (shouldn't be necessary, but just in case)
 	lua_settop(state, top);
 }
 
 
 /*******
-	This code could be replaced with something similar to contexts at a later date
+	This code could be replaced with something similar to contexts at a later date if you wanted
+	to have more than one kind of thing you wanted to initialize, I suppose
 *******/
 
 // Internal
 // Places a glue function with the name specified into the global list of glue info
 // If it's a method of a class, pass a pointer to the object's BBClass to insert it into
 // the class's Lua method table
-void lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas) {
+// If you're registering a global function (e.g., just a regular glue function), pass a NULL pointer
+// for the class
+void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas) {
 	glueinfo_t *info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
 	info->type = METHODTYPE;
 	info->fn = fn;
@@ -210,8 +257,8 @@ void lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas) {
 
 // Internal
 // Places the offset of an instance variable for a class into the global list of glue info
-// Passing 
-void lugi_register_field(int offset, int type, BBString *name, BBClass *clas) {
+// An exception is thrown if you pass a NULL pointer for the class
+void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas) {
 	if ( clas == NULL )
 		bbExThrowCString(ERRORSTR("@lugi_register_field: Cannot pass Null BBClass for field."));
 	
@@ -239,9 +286,9 @@ void lugi_free_info() {
 }
 
 
-//////// Stack manipulation
 
-//// Object handling
+/**************************************************************************************************
+**********/// Object handling/conversion
 
 // precondition: lua interface must be initialized for this state, or you will experience a crash.
 void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
@@ -372,7 +419,9 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 }
 
 
-//// Array handling
+
+/**************************************************************************************************
+**********/// Array handling/conversion
 
 void lua_pushbmaxarray(lua_State *state, BBArray *arr) {
 	if ( arr == &bbEmptyArray )
@@ -594,10 +643,13 @@ BBArray *lua_tobmaxarray(lua_State *state, int index) {
 
 
 
+/**************************************************************************************************
+**********/// Internal metamethod implementations
+
 //////// BBObject metatable
 
 // a <= b
-int lugi_le_object(lua_State *state) {
+static int lugi_le_object(lua_State *state) {
 	BBObject *a = lua_tobmaxobject(state, 1);
 	BBObject *b = lua_tobmaxobject(state, 2);
 	lua_pushboolean(state, (a->clas->Compare(a, b) <= 0));
@@ -606,7 +658,7 @@ int lugi_le_object(lua_State *state) {
 
 
 // a < b
-int lugi_lt_object(lua_State *state) {
+static int lugi_lt_object(lua_State *state) {
 	BBObject *a = lua_tobmaxobject(state, 1);
 	BBObject *b = lua_tobmaxobject(state, 2);
 	lua_pushboolean(state, (a->clas->Compare(a, b) < 0));
@@ -615,7 +667,7 @@ int lugi_lt_object(lua_State *state) {
 
 
 // a == b
-int lugi_eq_object(lua_State *state) {
+static int lugi_eq_object(lua_State *state) {
 	BBObject *a = lua_tobmaxobject(state, 1);
 	BBObject *b = lua_tobmaxobject(state, 2);
 	lua_pushboolean(state, (a->clas->Compare(a, b) == 0));
@@ -624,7 +676,7 @@ int lugi_eq_object(lua_State *state) {
 
 
 // table[key]  OR  table.key
-int lugi_index_object(lua_State *state) {
+static int lugi_index_object(lua_State *state) {
 	if (lua_type(state, 2) == LUA_TSTRING) {
 		
 		BBObject *obj = lua_tobmaxobject(state, 1);
@@ -709,7 +761,10 @@ int lugi_index_object(lua_State *state) {
 		} // while class
 	} // key is string
 	
-#if BMX_TABLE_SUPPORT == 1
+#if BMX_TABLE_SUPPORT != 1
+	// notify that there was an error accessing a field or method that does not exist
+	return luaL_error(state, ERRORSTR("@lugi_index_object: Index for object is not a valid field or method."));
+#else
 	lua_settop(state, 2);
 	
 	// prior table behavior for BMax objects
@@ -718,15 +773,12 @@ int lugi_index_object(lua_State *state) {
 	lua_gettable(state, 2); // this is funky
 	
 	return 1;
-#else
-	// notify that there was an error accessing a field or method that does not exist
-	return luaL_error(state, ERRORSTR("@lugi_index_object: Index for object is not a valid field or method."));
 #endif
 }
 
 
 // table[key] = value OR table.key = value
-int lugi_newindex_object(lua_State *state) {
+static int lugi_newindex_object(lua_State *state) {
 	if (lua_type(state, 2) == LUA_TSTRING) {
 		
 		BBObject *obj = lua_tobmaxobject(state, 1);
@@ -830,7 +882,9 @@ int lugi_newindex_object(lua_State *state) {
 		} // while class
 	} // key is string
 	
-#if def BMX_TABLE_SUPPORT == 1
+#if BMX_TABLE_SUPPORT != 0
+	return luaL_error(state, ERRORSTR("@lugi_newindex_object: Index for object is not a valid field or method."));
+#else
 	// prior table behavior for BMax objects - disabled by default
 	lua_settop(state, 3);
 	
@@ -839,8 +893,6 @@ int lugi_newindex_object(lua_State *state) {
 	lua_settable(state, 2);
 	
 	return 0;
-#else
-	return luaL_error(state, ERRORSTR("@lugi_newindex_object: Index for object is not a valid field or method."));
 #endif
 }
 
@@ -848,7 +900,7 @@ int lugi_newindex_object(lua_State *state) {
 // Userdata collection routine - only used in unthreaded builds where refcount has to be decremented
 // This is only compiled if not threaded, of course
 #ifndef THREADED
-int lugi_gc_object(lua_State *state) {
+static int lugi_gc_object(lua_State *state) {
 	BBObject **obj = (BBObject**)lua_touserdata(state,1);
 	BBRELEASE(*obj);
 	*obj = NULL;
@@ -856,9 +908,11 @@ int lugi_gc_object(lua_State *state) {
 #endif
 
 
-//////// Object constructor
 
-int lugi_new_object(lua_State *state) {
+/**************************************************************************************************
+**********/// Object constructor
+
+int p_lugi_new_object(lua_State *state) {
 	BBClass *clas = lua_touserdata(state, lua_upvalueindex(1));
 	lua_pushbmaxobject(state, bbObjectNew(clas));
 	return 1;

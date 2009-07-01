@@ -23,14 +23,20 @@
 #ifndef LUAINT_H_FE1DA7L0
 #define LUAINT_H_FE1DA7L0
 
+
 #include <brl.mod/blitz.mod/blitz.h>
 #include <pub.mod/lua.mod/lua-5.1.4/src/lua.h>
 #include <pub.mod/lua.mod/lua-5.1.4/src/lauxlib.h>
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+
+/**************************************************************************************************
+**********/// Macros
 
 /**
 	\brief Macro to enable table-like behavior for BMax objects in Lua.
@@ -57,6 +63,10 @@ extern "C" {
 #define BMX_TABLE_SUPPORT 0
 
 
+
+/**************************************************************************************************
+**********/// Field types
+
 /** \brief Field type enum
 
 	Used to identify the type of a BMax object's field from within Lua.
@@ -76,74 +86,9 @@ typedef enum {
 } fieldtype_e;
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-////////// BBObject, BBString
 
-/** \brief Pushes a BlitzMax object onto the top of the Lua stack.
-	
-		Valid types of objects are strings, any instance of a custom type subclassing Object, and
-		one-dimensional arrays of any type.
-		
-	\pre The state must have been initialized with lugi_init().
-	
-	\author Noel Cower
-	\date 2009-06-28
-	\param state The Lua state whose stack you want to push the object onto.
-	\param obj The object to push onto the stack.
-	\sa lua_pushbmaxarray(lua_State *state, BBArray *arr)
-**/
-void lua_pushbmaxobject(lua_State *state, BBObject *obj);
-
-/** \brief undocumented function
-	
-		longer description
-	
-	\pre The state must have been initialized with lugi_init().
-	
-	\author Noel Cower __MyCompanyName__
-	\date 2009-06-28
-	\param state The Lua state whose stack you want to retrieve the Object from.
-	\param index The index in the stack where the Object is located.
-	\return The object located at the index on the stack.  May be a String, Object, array, or Null
-	depending on the type of value at the index.
-	\sa lua_tobmaxarray(lua_State *state, int index), \ref arrays
-**/
-BBObject *lua_tobmaxobject(lua_State *state, int index);
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-////////// BBArray
-
-/** \brief undocumented function
-	
-		longer description
-	
-	\author Noel Cower __MyCompanyName__
-	\date 2009-06-28
-	\param  description of parameter
-	\param  description of parameter
-	\return description of return value
-	\sa
-**/
-void lua_pushbmaxarray(lua_State* state, BBArray* arr);
-
-/** \brief undocumented function
-	
-		longer description
-	
-	\author Noel Cower __MyCompanyName__
-	\date 2009-06-28
-	\param  description of parameter
-	\param  description of parameter
-	\return description of return value
-	\sa
-**/
-BBArray *lua_tobmaxarray(lua_State *state, int index);
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-////////// Initialization API
+/**************************************************************************************************
+**********/// Initialization API
 
 /** \brief Initialize LuGI for use with the specified Lua state.
 	
@@ -186,24 +131,86 @@ void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas);
 **/
 void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas);
 
+
+
+/**************************************************************************************************
+**********/// Object handling/conversion
+
+/** \brief Pushes a BlitzMax object onto the top of the Lua stack.
+	
+		Valid types of objects are strings, any instance of a custom type subclassing Object, and
+		one-dimensional arrays of any type.
+		
+	\pre The state must have been initialized with lugi_init().
+	
+	\author Noel Cower
+	\date 2009-06-28
+	\param state The Lua state whose stack you want to push the object onto.
+	\param obj The object to push onto the stack.
+	\sa lua_pushbmaxarray(lua_State *state, BBArray *arr)
+**/
+void lua_pushbmaxobject(lua_State *state, BBObject *obj);
+
+/** \brief undocumented function
+	
+		longer description
+	
+	\pre The state must have been initialized with lugi_init().
+	
+	\author Noel Cower __MyCompanyName__
+	\date 2009-06-28
+	\param state The Lua state whose stack you want to retrieve the Object from.
+	\param index The index in the stack where the Object is located.
+	\return The object located at the index on the stack.  May be a String, Object, array, or Null
+	depending on the type of value at the index.
+	\sa lua_tobmaxarray(lua_State *state, int index), \ref arrays
+**/
+BBObject *lua_tobmaxobject(lua_State *state, int index);
+
+
+
+/**************************************************************************************************
+**********/// Array handling/conversion
+
+/** \brief undocumented function
+	
+		longer description
+	
+	\author Noel Cower __MyCompanyName__
+	\date 2009-06-28
+	\param  description of parameter
+	\param  description of parameter
+	\return description of return value
+	\sa
+**/
+void lua_pushbmaxarray(lua_State* state, BBArray* arr);
+
+/** \brief undocumented function
+	
+		longer description
+	
+	\author Noel Cower __MyCompanyName__
+	\date 2009-06-28
+	\param  description of parameter
+	\param  description of parameter
+	\return description of return value
+	\sa
+**/
+BBArray *lua_tobmaxarray(lua_State *state, int index);
+
+
+
+/**************************************************************************************************
+**********/// Object constructor
+
 /// \brief Generic constructor function to allow instanciation of BMax types in Lua.
 int p_lugi_new_object(lua_State *state);
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-////////// Internal BBObject metamethods
-
-int lugi_le_object(lua_State* state);				// lua: a <= b
-int lugi_lt_object(lua_State* state);				// lua: a < b
-int lugi_eq_object(lua_State* state);				// lua: a == b
-int lugi_index_object(lua_State* state);			// lua: object[key], object.key, object:key
-int lugi_newindex_object(lua_State* state);			// lua: object[key] = value, object.key = value
-#ifndef THREADED
-int lugi_gc_object(lua_State *state);				// BBObject userdata collected by Lua
-#endif
 
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif /* end of include guard: LUAINT_H_FE1DA7L0 */
