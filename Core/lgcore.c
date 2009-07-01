@@ -45,6 +45,15 @@ static int lugi_gc_object(lua_State *state);			// BBObject userdata collected by
 
 
 /**************************************************************************************************
+**********/// Internal BBObject implementation
+
+static int lugi_sendmessage_object(lua_State *state);
+static int lugi_compare_object(lua_State *state);
+static int lugi_tostring_object(lua_State *state);
+
+
+
+/**************************************************************************************************
 **********/// Debugging macros
 
 //////// Error string utilities
@@ -145,6 +154,23 @@ void p_lugi_init(lua_State *state) {
 	lua_setmetatable(state, -2);
 	
 	lua_settable(state, LUA_REGISTRYINDEX);
+	
+	
+	// create object class
+	lua_pushlightuserdata(state, &bbObjectClass);
+	lua_createtable(state, 0, 3);
+	
+	lua_pushcclosure(state, lugi_sendmessage_object, 0);
+	lua_setfield(state, "SendMessage", -2);
+	
+	lua_pushcclosure(state, lugi_tostring_object, 0);
+	lua_setfield(state, "ToString", -2);
+	
+	lua_pushcclosure(state, lugi_compare_object, 0);
+	lua_setfield(state, "Compare", -2);
+	
+	lua_settable(state, LUA_REGISTRYINDEX);
+	
 	
 	// put closures in the VMTs for classes
 	glueinfo_t *info = lugi_g_infohead;
@@ -917,6 +943,78 @@ int p_lugi_new_object(lua_State *state) {
 	lua_pushbmaxobject(state, bbObjectNew(clas));
 	return 1;
 }
+
+
+
+/**************************************************************************************************
+**********/// Object methods (SendMessage, Compare, ToString)
+
+// receiver.SendMessage(message : LUA_TNIL or LUA_TSTRING or LUA_TTABLE or Object, [context = nil : LUA_TNIL or LUA_TSTRING or LUA_TTABLE or Object]) => LUA_TSTRING, LUA_TTABLE, LuGI Object
+int lugi_sendmessage_object(lua_State *state) {
+	int top = lua_gettop(state);
+	
+	if (2 < top || 3 < top) {
+		// try to provide somewhat useful error messages
+		if (top < 1)
+			luaL_error(state, ERRORSTR("@p_lugi_sendmessage_object: No instance for call to Object#SendMessage"));
+		else if (top == 1)
+			luaL_error(state, ERRORSTR("@p_lugi_sendmessage_object: Too few arguments (%d for 1) for Object#SendMessage"), (top-1));
+		else
+			luaL_error(state, ERRORSTR("@p_lugi_sendmessage_object: Too many arguments (%d for 2) for Object#SendMessage"), (top-1));
+		
+		return 0; // these returns are mainly a formality, since they're never reached
+	}
+	
+	BBObject *receiver = lua_tobmaxobject(state, 1);
+	BBObject *message = lua_tobmaxobject(state, 2);
+	BBObject *context = &bbNullObject;
+	
+	if (top == 3)	// I debated about using the ternary operator here, and decided readibilty matters more
+		context = lua_tobmaxobject(state, 3);
+	
+	return 1;
+}
+
+
+// receiver.ToString() => LUA_TSTRING
+int lugi_tostring_object(lua_State *state) {
+	int top = lua_gettop(state);
+	if (top != 1) {
+		if (top < 1)
+			luaL_error(state, ERRORSTR("@p_lugi_tostring_object: No instance for call to Object#ToString"));
+		else
+			luaL_error(state, ERRORSTR("@p_lugi_tostring_object: Too many arguments (%d for 0) to Object#ToString"), (top-1));
+		
+		return 0;
+	}
+	
+	BBObject *receiver = lua_tobmaxobject(state, 1);
+	lua_pushbmaxobject(state, receiver->clas->ToString(receiver));
+	return 1;
+}
+
+
+// left.Compare(Object|LUA_TSTRING|LUA_TTABLE) => LUA_TNUMBER
+int lugi_compare_object(lua_State *state) {
+	int top = lua_gettop(state);
+	if (top != 2) {
+		if (top < 1)
+			luaL_error(state, ERRORSTR("@p_lugi_compare_object: No instance for call to Object#Compare"));
+		else if (top == 1)
+			luaL_error(state, ERRORSTR("@p_lugi_compare_object: Too few arguments (%d for 1) for Object#Compare"), (top-1));
+		else
+			luaL_error(state, ERRORSTR("@p_lugi_compare_object: Too many arguments (%d for 1) for Object#Compare"), (top-1));
+		
+		return 0;
+	}
+	
+	BBObject *receiver = lua_tobmaxobject(state, 1);
+	lua_pushinteger(state, receiver->clas->Compare(receiver, lua_tobmaxobject(state, 2)));
+	
+	return 1;
+}
+
+
 
 #ifdef __cplusplus
 }
