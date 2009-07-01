@@ -1,5 +1,7 @@
 Strict
 
+Import "lgcore.c"
+
 Const BYTEFIELD:Int = 0
 Const SHORTFIELD:Int = 1
 Const INTFIELD:Int = 2
