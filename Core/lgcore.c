@@ -156,7 +156,8 @@ void p_lugi_init(lua_State *state) {
 	lua_newtable(state);
 	
 	lua_createtable(state, 0, 1); // create metatable for object cache
-	lua_pushlstring(state, "v", 1); // references to values are weak so that as long as the object persists in Lua, the object can be accessed from this cache
+	lua_pushlstring(state, "v", 1); // references to values are weak so that as long as the object
+									// persists in Lua, the object can be accessed from this cache
 	lua_setfield(state, -2, "__mode");
 	lua_setmetatable(state, -2);
 	
