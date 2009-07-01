@@ -57,13 +57,13 @@ Type LExposedMethod
 			Return Null
 		EndIf
 		
-		Local head$ = "Function "+ImplementationName()+"(lua_vm:Byte Ptr)"
-		Local tail$ = "End Function"
+		Local head$ = "Function "+ImplementationName()+"(lua_vm:Byte Ptr)~n"
+		Local tail$ = "End Function~n"
 		
 		If instanceMethod Then
-			Return head+"~n"+__instanceImp()+"~n"+tail
+			Return head+__instanceImp()+tail
 		Else
-			Return head+"~n"+__noclassImp()+"~n"+tail
+			Return head+__noclassImp()+tail
 		EndIf
 	End Method
 	
