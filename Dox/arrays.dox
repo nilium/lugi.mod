@@ -1,0 +1,99 @@
+/*
+	Copyright (c) 2009 Noel R. Cower
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
+// arrays.doxy
+
+/** \page arrays Arrays
+	
+	\section pushing-arrays Pushing Arrays
+	
+	With lua_pushbmaxarray, you can push an array of any type, including arrays of arrays.  Arrays
+	are converted into Lua tables at runtime, and their indices always start at 1.  If an array is
+	empty, an empty table (\c {}) will be pushed onto the stack.
+	
+	Arrays of signed integers, unsigned bytes, unsigned shorts, and signed longs (64-bit integers) are pushed as tables of numbers
+	using \c lua_pushinteger, Double[] and Float[] arrays are pushed as tables of numbers using
+	\c lua_pushnumber, and String[] arrays are pushed as tables of strings using \c lua_pushstring.
+	
+	Pushing an Object[] array or an Object[][] (an array of arrays) uses lua_pushbmaxobject() to
+	sort out the type of object being added to the table.  Arrays of objects can have any type of
+	object, including strings and arrays, mixed together.
+	
+	At no point will lua_pushbmaxarray be able to infer the content of an array should be converted
+	to a table of booleans.  Given the limited use of an array of booleans.
+	
+	\b Example:
+	\code
+	' int_array.bmx
+	' assume the existence of an initialized lua_vm
+	
+	Local int_array:Int[] = [5, 10, 15, 20]
+	
+	lua_pushbmaxarray(lua_vm, int_array)
+	lua_setglobal(lua_vm, "int_array")
+	
+	luaL_dofile(lua_vm, "int_array.lua")
+	
+	-- int_array.lua
+	
+	print(int_array[1])		-- => 5.0
+	print(int_array[2])		-- => 10.0
+	print(int_array[3])		-- => 15.0
+	print(int_array[4])		-- => 20.0
+	\endcode
+	
+	\note When pushing an array, the array you get back may not be the same as the one you pushed
+	if there were Null values in the middle of the original array.  This is due to the way the
+	Lua length operator (\c #) works, where the length of the table is N where table[N] is not nil,
+	and table[N+1] is nil.
+	
+	\note \b Important: Arrays of all types \em must be 1D arrays.  Multidimensional arrays are
+	\em not supported and there is no support planned for them.
+	
+	\section getting-arrays Getting Arrays
+	\p When getting an array, there are four kinds of arrays that can be returned, \c Int[],
+	\c Double[], \c String[], \c Object[].  The type of array returned is determined by the first
+	element (\c table[1]) of the table at the index you specify when calling lua_tobmaxarray (or
+	lua_tobmaxobject, which will call lua_tobmaxarray if it encounters a table).  This table shows
+	the Lua type and its corresponding BMax type when converting arrays:
+	
+	\htmlonly
+	<table style="width:25em;">
+		<tr> <th><code>table[i]</code> type</th> <th>BMax type</th> </tr>
+		<tr> <td>Boolean</td> <td><code>Int[]</code></td> </tr>
+		<tr> <td>Number</td> <td><code>Double[]</code></td> </tr>
+		<tr> <td>String</td> <td><code>String[]</code></td> </tr>
+		<tr> <td>BMax Userdata</td> <td><code>Object[]</code></td> </tr>
+		<tr> <td>Tables</td> <td><code>Object[]</code></td> </tr>
+	</table>
+	\endhtmlonly
+	
+	\p It's important to ensure that, in the event you pass a table to BlitzMax for use as an array,
+	you ensure that it contains only one type of value.  There are two exceptions to this, however.
+	The first being that strings and numbers are interchangeable; however, you will always get a
+	String[] when the first element is a string, and a Double[] when the first element is a number.
+	The second exception is that if the first object is an object or table, strings will also be
+	included in the array (as lua_tobmaxobject() will convert strings to BBString objects).
+	
+	Lastly, arrays of arrays are possible if the first element is a table.  The same rules apply to
+	arrays of arrays as they do to arrays of objects, as BlitzMax arrays are objects themselves.
+**/

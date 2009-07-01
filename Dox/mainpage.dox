@@ -1,0 +1,83 @@
+/*
+	Copyright (c) 2009 Noel R. Cower
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
+/** \mainpage LuGI API Documentation
+
+	\section intro Introduction
+	
+	\b LuGI - pronounced \em loogie - is a framework for building Lua glue code for BlitzMax, and
+	provides much of the ground-work needed to get BlitzMax object support working quickly and
+	painlessly in BlitzMax.  The way LuGI does this is by trying to make the best possible use of
+	Lua's C API and the Lua registry.  Almost all of the internals are hidden away in such a way
+	that you can access them if you need to, but you will have a very hard time breaking anything
+	unintentionally.
+	
+	The code is composed of a very small core API (only 5 functions you	normally need to know), and
+	tools for generating the required glue code to make use of LuGI: two functions to push objects
+	and arrays, two functions to get objects and arrays, and an initialization function.  There are
+	also two other functions for manipulating what is exposed to LuGI and a generic constructor to
+	allow Lua scripts to create BlitzMax objects.
+	
+	\section how-to-use Using LuGI
+	
+	To start using LuGI, you should begin tagging your types, methods, and fields you wish to expose
+	with the appropriate metadata (\ref metadata).  These tags tell LuGI what types to generate glue
+	code for, and in some cases the type of code generated.  Currently, only types and instance
+	methods can be tagged, due to the lack of support in the Brl.Reflection module for functions
+	and class methods.
+	
+	Once you've tagged some of your types and methods, import the LuGI code generation file into
+	your BlitzMax project, or make a copy of the tool and import the source code or module you want
+	to expose into the tool.  Follow either of the sections below to decide which option is best.
+	
+	\subsection in-gen Importing your source code into LuGIgen
+	
+	\todo Write documentation on how to import code into LuGIgen
+	
+	\subsection in-project Importing LuGIgen into your project
+	
+	Take your existing project's main source file - for the sake of example, we'll say \c
+	main.bmx, and add Import "lugigen.bmx" to it.  Now add a call to GenerateGlueCode() before any
+	other operations occur.  Compile and run your program - it should exit after some time where it
+	may appear to do nothing.  This is because LuGIgen will generate source code, save it to a
+	\c glue/ subdirectory, and terminate the application.
+	
+	Once this is done, feel free to remove the call to GenerateGlueCode() and lugigen.bmx from your
+	project.
+	
+	\note In the event that you choose this option, you should ensure that come release, lugigen.bmx
+	is not included in your project.  It is not needed to use any functionality of LuGI at runtime.
+	
+	\subsection gen-done Using the generated code
+	
+	Now that you've got your \c glue/ directory, move it or its contents to wherever you'd like the
+	code to go, and import \c glue/glue-head.bmx into your main source code (or wherever your Lua
+	script code resides).
+	
+	\note The glue code will import the code that it requires, so try to ensure that, at the very
+	least, you don't import any of the glue code into a file that has something the glue code is
+	exposing to Lua.  This will create a cyclic import and \em will cause errors during compilation.
+	
+	\note As such, avoid exposing any code pertaining to Lua itself, and avoid tightly coupled code
+	at all costs.
+
+**/
