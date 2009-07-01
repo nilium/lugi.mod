@@ -40,7 +40,16 @@ Type LExposedType
 	
 	' Compares LExposedTypes based on the TTypeId associated with each LExposedType
 	Method Compare:Int(other:Object)
-		Return typeid.Compare(LExposedType(other).typeid)
+		Local ot:LExposedType = LExposedType(other)
+		If other = Null Then
+			Return 1
+		ElseIf TTypeId(other) Then
+			Return typeid.Compare(other)
+		ElseIf other And Not ot Then
+			Throw "Invalid type to compare LExposedType against"
+		Else
+			Return typeid.Compare(ot.typeid)
+		EndIf
 	End Method
 	
 	' Returns a list of exposed types to iterate over
