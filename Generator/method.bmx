@@ -43,6 +43,11 @@ Type LExposedMethod
 	End Method
 	
 	Method PreInitBlock:String()
+		If hidden Then
+			Return Null
+		EndIf
+		
+		Return "p_lugi_register_method " + ImplementationName() + ", " + name + ", Byte Ptr(TTypeId.ForName(~q" + owner.Name() + "~q)._class)"
 	End Method
 	
 	Method PostInitBlock:String()
