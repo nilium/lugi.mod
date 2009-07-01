@@ -62,7 +62,7 @@ Type LExposedType
 	' If there is already an instance for this type, that instance will be returned instead
 	' of proceeding with intialization
 	Method InitWithTypeID:LExposedType(tid:TTypeId)
-		If tid = ObjectTypeId Or typeid = StringTypeId Or typeid._class = ArrayTypeId._class Then
+		If tid = ObjectTypeId Or tid = StringTypeId Or tid._class = ArrayTypeId._class Then
 			Return Null
 		EndIf
 		
