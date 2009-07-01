@@ -124,9 +124,19 @@ static glueinfo_t *lugi_g_infohead = NULL;
 
 // the values of these variables is completely irrelevant, as the addresses of the variables are used
 // as keys into the registry table
-static void *bmx_metatable = NULL;
-static void *bmx_object_key = NULL;
-static void *bmx_table_key = NULL;
+static void* const LUGI_METATABLE_KEY = &LUGI_METATABLE_KEY;		// key for the generic metatable
+static void* const LUGI_OBJECT_CACHE_KEY = &LUGI_OBJECT_CACHE_KEY;	// key for the LuGI object cache
+
+
+
+/**************************************************************************************************
+**********/// Number of records for the object metatable
+
+#ifdef THREADED
+#	define LUGI_METATABLE_NUM_RECORDS 5
+#else
+#	define LUGI_METATABLE_NUM_RECORDS 6
+#endif
 
 
 
@@ -139,13 +149,10 @@ static void *bmx_table_key = NULL;
 // registry]) and creates the virtual method table for all classes as well as making global methods
 // accessible.
 void p_lugi_init(lua_State *state) {
-	bmx_metatable = &bmx_metatable;
-	bmx_object_key = &bmx_object_key;
-	
 	int top = lua_gettop(state);
 	
 	// create object cache
-	lua_pushlightuserdata(state, bmx_object_key);
+	lua_pushlightuserdata(state, LUGI_OBJECT_CACHE_KEY);
 	lua_newtable(state);
 	
 	lua_createtable(state, 0, 1); // create metatable for object cache
@@ -220,17 +227,10 @@ void p_lugi_init(lua_State *state) {
 		info = info->next;
 	}
 	
-	// create the generic object metatable
-	lua_pushlightuserdata(state, bmx_metatable);
-#ifdef THREADED
-	lua_createtable(state, 0, 5);
-#else
-	lua_createtable(state, 0, 6);	// extra record for __gc
 	
-	// t.__gc
-	lua_pushcclosure(state, lugi_gc_object, 0);
-	lua_setfield(state, -2, "__gc");
-#endif
+	// create the generic object metatable
+	lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
+	lua_createtable(state, 0, LUGI_METATABLE_NUM_RECORDS);
 	
 	lua_pushcclosure(state, lugi_le_object, 0); // a < b
 	lua_setfield(state, -2, "__le");
@@ -343,7 +343,7 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 	}
 	
 	// check object cache for existing object
-	lua_pushlightuserdata(state, bmx_object_key);
+	lua_pushlightuserdata(state, LUGI_OBJECT_CACHE_KEY);
 	lua_gettable(state, LUA_REGISTRYINDEX);
 	
 	// cache[object]
@@ -396,7 +396,7 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 #endif
 	
 	// set the metatable
-	lua_pushlightuserdata(state, bmx_metatable);
+	lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
 	lua_gettable(state, LUA_REGISTRYINDEX);
 	lua_setmetatable(state, -2);
 	
