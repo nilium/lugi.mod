@@ -24,6 +24,7 @@
 #define LUAINT_H_FE1DA7L0
 
 
+#include <stdint.h>
 #include <brl.mod/blitz.mod/blitz.h>
 #include <pub.mod/lua.mod/lua-5.1.4/src/lua.h>
 #include <pub.mod/lua.mod/lua-5.1.4/src/lauxlib.h>
@@ -35,8 +36,7 @@ extern "C" {
 
 
 
-/**************************************************************************************************
-**********/// Macros
+/********************************************* Macros *********************************************/
 
 /**
 	\brief Macro to enable table-like behavior for BMax objects in Lua.
@@ -64,8 +64,7 @@ extern "C" {
 
 
 
-/**************************************************************************************************
-**********/// Field types
+/******************************************* Field types ******************************************/
 
 /** \brief Field type enum
 
@@ -74,21 +73,23 @@ extern "C" {
 	\sa lugi_register_field()
 **/
 typedef enum {
-	BYTEFIELD=0,
-	SHORTFIELD=1,
-	INTFIELD=2,
-	FLOATFIELD=3,
-	LONGFIELD=4,
-	DOUBLEFIELD=5,
-	STRINGFIELD=6,
-	OBJECTFIELD=7,
-	ARRAYFIELD=8
+	BYTEFIELD=0x1,
+	SHORTFIELD=0x2,
+	INTFIELD=0x4,
+	FLOATFIELD=0x8,
+	LONGFIELD=0x10,
+	DOUBLEFIELD=0x20,
+	STRINGFIELD=0x40,
+	OBJECTFIELD=0x80,
+	ARRAYFIELD=0x100
 } fieldtype_e;
 
+/* option specifying a boolean number (only affects BYTE, SHORT, INT, and LONGFIELD members) */
+#define BOOLFIELDOPT	(0x8000UL)
 
 
-/**************************************************************************************************
-**********/// Initialization API
+
+/*************************************** Initialization API ***************************************/
 
 /** \brief Initialize LuGI for use with the specified Lua state.
 	
@@ -133,8 +134,7 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas);
 
 
 
-/**************************************************************************************************
-**********/// Object handling/conversion
+/*********************************** Object handling/conversion ***********************************/
 
 /** \brief Pushes a BlitzMax object onto the top of the Lua stack.
 	
@@ -169,8 +169,7 @@ BBObject *lua_tobmaxobject(lua_State *state, int index);
 
 
 
-/**************************************************************************************************
-**********/// Array handling/conversion
+/************************************ Array handling/conversion ***********************************/
 
 /** \brief undocumented function
 	
@@ -200,10 +199,9 @@ BBArray *lua_tobmaxarray(lua_State *state, int index);
 
 
 
-/**************************************************************************************************
-**********/// Object constructor
+/*************************************** Object constructor ***************************************/
 
-/// \brief Generic constructor function to allow instanciation of BMax types in Lua.
+/** \brief Generic constructor function to allow instanciation of BMax types in Lua. **/
 int p_lugi_new_object(lua_State *state);
 
 
