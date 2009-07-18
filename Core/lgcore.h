@@ -23,17 +23,15 @@
 #ifndef LUAINT_H_FE1DA7L0
 #define LUAINT_H_FE1DA7L0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include <stdint.h>
 #include <brl.mod/blitz.mod/blitz.h>
 #include <pub.mod/lua.mod/lua-5.1.4/src/lua.h>
 #include <pub.mod/lua.mod/lua-5.1.4/src/lauxlib.h>
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 
 /********************************************* Macros *********************************************/

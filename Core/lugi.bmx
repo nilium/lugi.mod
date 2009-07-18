@@ -4,7 +4,7 @@ Strict
 Import Brl.Threads
 ?
 Import Pub.Lua
-Import "lgcore.c"
+Import "lgcore.cpp"
 
 Public
 
