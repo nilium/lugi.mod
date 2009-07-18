@@ -140,38 +140,52 @@ static void* const LUGI_OBJECT_CACHE_KEY = (void* const)&LUGI_OBJECT_CACHE_KEY;	
   accessible.
 */
 void p_lugi_init(lua_State *state) {
-	int top = lua_gettop(state);
-	
-	/* create object cache */
+	/* check for object cache */
 	lua_pushlightuserdata(state, LUGI_OBJECT_CACHE_KEY);
-	lua_newtable(state);
+	lua_gettable(state, LUA_REGISTRYINDEX);
 	
-	lua_createtable(state, 0, 1);		/* create metatable for object cache */
-	lua_pushlstring(state, "v", 1);		/* references to values are weak so that as long as the object */
-						/* persists in Lua, the object can be accessed from this cache */
-	lua_setfield(state, -2, "__mode");
-	lua_setmetatable(state, -2);
+	if ( lua_type(state, -1) != LUA_TTABLE ) {
+		/* create object cache if it doesn't exist */
+		lua_pushlightuserdata(state, LUGI_OBJECT_CACHE_KEY);
 	
-	lua_settable(state, LUA_REGISTRYINDEX);
+		lua_newtable(state);
+		
+		lua_createtable(state, 0, 1);		/* create metatable for object cache */
+		lua_pushlstring(state, "v", 1);		/* references to values are weak so that as long as the object */
+							/* persists in Lua, the object can be accessed from this cache */
+		lua_setfield(state, -2, "__mode");
+		lua_setmetatable(state, -2);
+		
+		lua_settable(state, LUA_REGISTRYINDEX);
+	}
+	lua_pop(state, 1); /* pop result of checking for the cache */
 	
-	
-	/* create object class */
+	/* check for BBObject class VMT */
 	lua_pushlightuserdata(state, &bbObjectClass);
-	lua_createtable(state, 0, 3);
+	lua_gettable(state, LUA_REGISTRYINDEX);
 	
-	lua_pushcclosure(state, lugi_sendmessage_object, 0);
-	lua_setfield(state, -2, "SendMessage");
-	
-	lua_pushcclosure(state, lugi_tostring_object, 0);
-	lua_setfield(state, -2, "ToString");
-	
-	lua_pushcclosure(state, lugi_compare_object, 0);
-	lua_setfield(state, -2, "Compare");
-	
-	lua_settable(state, LUA_REGISTRYINDEX);
+	if ( lua_type(state, -1) != LUA_TTABLE ) {
+		/* create BBObject VMT */
+		lua_pushlightuserdata(state, &bbObjectClass);
+		
+		lua_createtable(state, 0, 3);
+		
+		lua_pushcclosure(state, lugi_sendmessage_object, 0);
+		lua_setfield(state, -2, "SendMessage");
+		
+		lua_pushcclosure(state, lugi_tostring_object, 0);
+		lua_setfield(state, -2, "ToString");
+		
+		lua_pushcclosure(state, lugi_compare_object, 0);
+		lua_setfield(state, -2, "Compare");
+		
+		lua_settable(state, LUA_REGISTRYINDEX);
+	}
+	lua_pop(state, 1); /* pop result of checking for the VMT */
 	
 	
 	/* put closures in the VMTs for classes */
+	/* these do not check to see if the methods have already been registered, so they'll be overwritten at times */
 	glueinfo_t *info = lugi_g_infohead;
 	while (info) {
 		if ( info->clas == NULL ) {
@@ -220,34 +234,38 @@ void p_lugi_init(lua_State *state) {
 	}
 	
 	
-	/* create the generic object metatable */
+	/* check to see if the generic object metatable exists */
 	lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
-	lua_createtable(state, 0, LUGI_METATABLE_NUM_RECORDS);
+	lua_gettable(state, LUA_REGISTRYINDEX);
 	
-	lua_pushcclosure(state, lugi_le_object, 0); /* a < b */
-	lua_setfield(state, -2, "__le");
-	lua_pushcclosure(state, lugi_lt_object, 0); /* a <= b */
-	lua_setfield(state, -2, "__lt");
-	lua_pushcclosure(state, lugi_eq_object, 0); /* a == b */
-	lua_setfield(state, -2, "__lq");
-	/* index */
-	lua_pushcclosure(state, lugi_index_object, 0); /* a[b] */
-	lua_setfield(state, -2, "__index");
-	/* newindex */
-	lua_pushcclosure(state, lugi_newindex_object, 0); /* a[b] = c */
-	lua_setfield(state, -2, "__newindex");
-	
-#ifndef THREADED
-	/* t.__gc */
-	lua_pushcclosure(state, lugi_gc_object, 0);
-	lua_setfield(state, -2, "__gc");
-#endif
-	
-	lua_settable(state, LUA_REGISTRYINDEX);
-	
-	
-	/* reset the top of the stack so it's clean (shouldn't be necessary, but just in case) */
-	lua_settop(state, top);
+	if ( lua_type(state, -1) != LUA_TTABLE ) {
+		/* create the metatable if it doesn't exist */
+		lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
+		
+		lua_createtable(state, 0, LUGI_METATABLE_NUM_RECORDS);
+		
+		lua_pushcclosure(state, lugi_le_object, 0); /* a < b */
+		lua_setfield(state, -2, "__le");
+		lua_pushcclosure(state, lugi_lt_object, 0); /* a <= b */
+		lua_setfield(state, -2, "__lt");
+		lua_pushcclosure(state, lugi_eq_object, 0); /* a == b */
+		lua_setfield(state, -2, "__lq");
+		/* index */
+		lua_pushcclosure(state, lugi_index_object, 0); /* a[b] */
+		lua_setfield(state, -2, "__index");
+		/* newindex */
+		lua_pushcclosure(state, lugi_newindex_object, 0); /* a[b] = c */
+		lua_setfield(state, -2, "__newindex");
+		
+	#ifndef THREADED
+		/* t.__gc */
+		lua_pushcclosure(state, lugi_gc_object, 0);
+		lua_setfield(state, -2, "__gc");
+	#endif
+		
+		lua_settable(state, LUA_REGISTRYINDEX);
+	}
+	lua_pop(state, 1); /* remove the result of checking for the metatable */
 }
 
 
@@ -711,11 +729,11 @@ static int lugi_index_object(lua_State *state) {
 			
 				if (type == LUA_TNUMBER) {		/* getting the value of a field */
 					int fieldopt = lua_tointeger(state, -1);
-					unsigned short type = (unsigned short)fieldopt>>16;
-					unsigned short offset = (unsigned short)fieldopt;
+					unsigned short type = fieldopt>>16;
+					unsigned short offset = fieldopt&0xFFFF;
 					bmx_field *field = (bmx_field*)((char*)obj+offset);
 					
-					switch (type) {
+					switch (type&(~BOOLFIELDOPT)) {
 						case BYTEFIELD:
 						if (type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->byte_value);
@@ -947,7 +965,12 @@ int p_lugi_new_object(lua_State *state) {
 
 /************************* Object methods (SendMessage, Compare, ToString) ************************/
 
-/* receiver.SendMessage(message : LUA_TNIL or LUA_TSTRING or LUA_TTABLE or Object, [context = nil : LUA_TNIL or LUA_TSTRING or LUA_TTABLE or Object]) => LUA_TSTRING, LUA_TTABLE, LuGI Object */
+/*
+  receiver.SendMessage(
+    message : LUA_TNIL or LUA_TSTRING or LUA_TTABLE or Object,
+    [context = nil : LUA_TNIL or LUA_TSTRING or LUA_TTABLE or Object]
+  ) => LUA_TSTRING, LUA_TTABLE, Object
+*/
 int lugi_sendmessage_object(lua_State *state) {
 	int top = lua_gettop(state);
 	
@@ -961,14 +984,14 @@ int lugi_sendmessage_object(lua_State *state) {
 			luaL_error(state, ERRORSTR("@p_lugi_sendmessage_object: Too many arguments (%d for 2) for Object#SendMessage"), (top-1));
 		}
 		
-		return 0; /* these returns are mainly a formality, since they're never reached */
+		return 0;
 	}
 	
 	BBObject *receiver = lua_tobmaxobject(state, 1);
 	BBObject *message = lua_tobmaxobject(state, 2);
 	BBObject *context = &bbNullObject;
 	
-	if (top == 3)	/* I debated about using the ternary operator here, and decided readibilty matters more */
+	if (top == 3)
 		context = lua_tobmaxobject(state, 3);
 	
 	return 1;

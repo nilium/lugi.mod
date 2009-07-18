@@ -73,19 +73,19 @@ extern "C" {
 	\sa lugi_register_field()
 **/
 typedef enum {
-	BYTEFIELD=0x1,
-	SHORTFIELD=0x2,
-	INTFIELD=0x4,
-	FLOATFIELD=0x8,
-	LONGFIELD=0x10,
-	DOUBLEFIELD=0x20,
-	STRINGFIELD=0x40,
-	OBJECTFIELD=0x80,
-	ARRAYFIELD=0x100
+	BYTEFIELD = 0x001,
+	SHORTFIELD = 0x002,
+	INTFIELD = 0x004,
+	FLOATFIELD = 0x008,
+	LONGFIELD = 0x010,
+	DOUBLEFIELD = 0x020,
+	STRINGFIELD = 0x040,
+	OBJECTFIELD = 0x080,
+	ARRAYFIELD = 0x100,
+	
+	/** Optional flag to specify that an integer field should be returned as a Lua boolean. **/
+	BOOLFIELDOPT = 0x8000
 } fieldtype_e;
-
-/* option specifying a boolean number (only affects BYTE, SHORT, INT, and LONGFIELD members) */
-#define BOOLFIELDOPT	(0x8000UL)
 
 
 
