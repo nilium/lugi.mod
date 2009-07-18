@@ -35,9 +35,10 @@
 	
 	The code is composed of a very small core API (only 5 functions you	normally need to know), and
 	tools for generating the required glue code to make use of LuGI: two functions to push objects
-	and arrays, two functions to get objects and arrays, and an initialization function.  There are
-	also two other functions for manipulating what is exposed to LuGI and a generic constructor to
-	allow Lua scripts to create BlitzMax objects.
+	and arrays, two functions to get objects and arrays, and an initialization function.  The
+	remainder of the API is hidden away by monks who cannot speak, for they have cut out their
+	tongues.  Incidentally, the API is also inside of a header file (lgcore.h) - however, the rest
+	of the LuGI core code is strictly for those interested in writing their own code generators.
 	
 	\section how-to-use Using LuGI
 	
