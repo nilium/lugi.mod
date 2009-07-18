@@ -492,36 +492,36 @@ void lua_pushbmaxarray(lua_State *state, BBArray *arr) {
 	
 	switch(arr->type[0])
 	{
-		case 'b':
+		case 'b':	/* byte */
 		BUILDTABLE(lua_pushinteger, uint8_t)
 		break;
 		
-		case 's':
+		case 's':	/* short */
 		BUILDTABLE(lua_pushinteger, uint16_t)
 		break;
 		
-		case 'i':
+		case 'i':	/* int */
 		BUILDTABLE(lua_pushinteger, int32_t)
 		break;
 		
-		case 'l':
+		case 'l':	/* long */
 		BUILDTABLE(lua_pushinteger, int64_t)
 		break;
 		
-		case 'f':
+		case 'f':	/* float */
 		BUILDTABLE(lua_pushnumber, float)
 		break;
 		
-		case 'd':
+		case 'd':	/* double */
 		BUILDTABLE(lua_pushnumber, double)
 		break;
 		
-		case '$':
-		case ':':
+		case '$':	/* string */
+		case ':':	/* any type of object */
 		BUILDTABLE(lua_pushbmaxobject, BBObject*)
 		break;
 		
-		case '[':
+		case '[':	/* array */
 		BUILDTABLE(lua_pushbmaxarray, BBArray*)
 		break;
 	}
