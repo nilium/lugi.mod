@@ -2,9 +2,11 @@ Strict
 
 Import "metadata.bmx"
 
+Const REGISTER_FIELD_NAME$ = "register_field"
+
 Private
 
-Function TypeStringForField:String(tid:TTypeID)
+Function TypeStringForField:String(tid:TTypeID, fid:TField)
 	Local typ$
 	Select tid
 		Case ByteTypeId
@@ -30,6 +32,17 @@ Function TypeStringForField:String(tid:TTypeID)
 				typ = "OBJECTFIELD"
 			EndIf
 	End Select
+	
+	' Add LUGI_ prefix
+	typ = "LUGI_"+typ
+	
+	If fid.Metadata(LUGI_META_BOOL).ToInt()>0 Then
+		Select tid
+			Case ByteTypeId, ShortTypeId, IntTypeId, LongTypeId
+				typ = "("+typ+"|LUGI_BOOLFIELDOPT)"
+		End Select
+	EndIf
+	
 	Return typ
 End Function
 
@@ -39,11 +52,14 @@ Type LExposedField
 	Field fieldid:TField
 	Field registration$
 	
-	Method InitWithField:LExposedField(id:TField, owner:TTypeId)
+	' Initializes an exposed field - returns Null if the field isn't exposed
+	Method InitWithField:LExposedField(id:TField, owner:TTypeID)
 		fieldid = id
 		
 		If Not ((owner.Metadata(LUGI_META_HIDEFIELDS).ToInt()>0) Or (fieldid.Metadata(LUGI_META_HIDDEN).ToInt()>0)) Then
-			registration = "p_lugi_register_field " + fieldid._index + ", " + TypeStringForField(fieldid.TypeId()) + ", " + fieldid.Name() + ", TTypeId.ForName(~q" + owner.Name() + "~q)"
+			registration = REGISTER_FIELD_NAME+"( " + fieldid._index + ", " + TypeStringForField(fieldid.TypeId(), fieldid) + ", ~q" + fieldid.Name() + "~q, Byte Ptr(TTypeID.ForName(~q" + owner.Name() + "~q)._class) )"
+		Else
+			Return Null
 		EndIf
 		
 		Return Self

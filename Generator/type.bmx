@@ -12,6 +12,8 @@ Global _exposedTypes:TList = New TList
 
 Public
 
+Const CONSTRUCTOR_NAME$="constructor"
+
 Type LExposedType
 	Field exposed%
 	Field static%
@@ -19,14 +21,16 @@ Type LExposedType
 	Field hidefields%
 	Field nonew%
 	
-	Field typeid:TTypeId
+	Field typeid:TTypeID
 	Field methods:TList			' TList<LExposedMethod>
 	Field fields:TList			' TList<LExposedField>
 	Field constructor$
 	Field name$
 	
+	Field globalname$			' Only set if noclass and static are set
+	
 	' Returns an LExposedType for a typeid - recommended to use this instead of creating a new LExposedType and initializing it
-	Function ForType:LExposedType(typeid:TTypeId)
+	Function ForType:LExposedType(typeid:TTypeID)
 		If typeid = ObjectTypeId Or typeid = StringTypeId Or typeid._class = ArrayTypeId._class Then
 			Return Null
 		EndIf
@@ -38,12 +42,12 @@ Type LExposedType
 		Return New LExposedType.InitWithTypeID(typeid)
 	End Function
 	
-	' Compares LExposedTypes based on the TTypeId associated with each LExposedType
+	' Compares LExposedTypes based on the TTypeID associated with each LExposedType
 	Method Compare:Int(other:Object)
 		Local ot:LExposedType = LExposedType(other)
 		If other = Null Then
 			Return 1
-		ElseIf TTypeId(other) Then
+		ElseIf TTypeID(other) Then
 			Return typeid.Compare(other)
 		ElseIf other And Not ot Then
 			Throw "Invalid type to compare LExposedType against"
@@ -61,7 +65,7 @@ Type LExposedType
 	' The object returned may not be the one you originally sent the initialize message to
 	' If there is already an instance for this type, that instance will be returned instead
 	' of proceeding with intialization
-	Method InitWithTypeID:LExposedType(tid:TTypeId)
+	Method InitWithTypeID:LExposedType(tid:TTypeID)
 		If tid = ObjectTypeId Or tid = StringTypeId Or tid._class = ArrayTypeId._class Then
 			Return Null
 		EndIf
@@ -91,12 +95,16 @@ Type LExposedType
 			name = typeid.Name()
 		EndIf
 		
-		If Not (nonew Or (static and noclass)) Then
+		If Not (nonew Or static) Then
 			constructor = typeid.Metadata(LUGI_META_CONSTRUCTOR).Trim()
 			If Not constructor Then
 				' Force New[A-Z_].* as default
 				constructor = "New"+name[0..1].ToUpper()+name[1..]
 			EndIf
+		EndIf
+		
+		If static And noclass Then
+			globalname = GLOBAL_PREFIX+NOCLASS_VAR_PREFIX+typeid.Name()+"_"+GenerateUniqueTag(6)
 		EndIf
 		
 		__initMethods
@@ -119,7 +127,19 @@ Type LExposedType
 		If Not (static And noclass) Then
 			DebugLog "Instance methods"
 			For Local m:LExposedMethod = EachIn methods
-				Local initString$ = m.PreInitBlock()
+				outs :+ "~t' Register instance method "+typeid.Name()+"#"+m.methodid.Name()+"~n"
+				m = __methodExposedInParent(m)
+				Local initString$ = m.PreInitBlock(typeid)
+				If initString Then
+					outs :+ "~t" + initString + "~n"
+				EndIf
+			Next
+		Else
+			DebugLog "Instance methods"
+			For Local m:LExposedMethod = EachIn methods
+				outs :+ "~t' Register global method "+typeid.Name()+"#"+m.methodid.Name()+"~n"
+				'm = __methodExposedInParent(m)
+				Local initString$ = m.PreInitBlock(Null)
 				If initString Then
 					outs :+ "~t" + initString + "~n"
 				EndIf
@@ -146,34 +166,52 @@ Type LExposedType
 		
 		DebugLog "Post-init block for "+typeid.Name()
 		
-		If Not (nonew Or (static And noclass)) Then
-			Return 	"~tlua_pushlightuserdata lua_vm, Byte Ptr(TTypeId.ForName(~q" + typeid.Name() + "~q)._class)~n" + ..
-					"~tlua_pushcclosure lua_vm, p_lugi_new_object, 1~n"
+		If Not static And Not noclass Then
+			Return 	"~t' Register constructor for "+typeid.Name()+"~n" + ..
+				"~tlua_pushlightuserdata( lua_vm, Byte Ptr(TTypeID.ForName(~q" + typeid.Name() + "~q)._class) )~n" + ..
+				"~tlua_pushcclosure( lua_vm, "+CONSTRUCTOR_NAME+", 1 )~n" + ..
+				"~tlua_setfield( lua_vm, LUA_GLOBALSINDEX, ~q"+constructor+"~q )~n"
 		ElseIf static And Not noclass Then
-			Return	"~t"
+			Return "~t' Create object for static type "+typeid.Name()+"~n" + ..
+				"~tlua_pushbmaxobject( lua_vm, New "+typeid.Name()+" )~n" + ..
+				"~tlua_setfield( lua_vm, LUA_GLOBALSINDEX, ~q"+name+"~q )~n"
 		EndIf
 	End Method
 	
-	Method MethodImplementations:String()
+	Method Implementation:String()
+		' The method to be implemented
+		Local m:LExposedMethod
+		' Output string
+		Local outs$
+		' Whether or not the method is an instance method
+		Local instMethod% = Not (static And noclass)
+		
+		' Return nothing if the type has no method implementations
 		If Not exposed Then
 			Return Null
 		EndIf
 		
-		DebugLog "Method implementations for "+typeid.Name()
-		
-		Local m:LExposedMethod
-		Local outs$
-		Local instMethod% = Not (static And noclass)
-		Local block$
+		' Implementation of a noclass type requires a global instance of the type
+		If static And noclass Then
+			outs :+ "Global "+globalname+":"+typeid.Name()+" = New "+typeid.Name()+"~n"
+		EndIf
 		
 		For m = EachIn methods
+			' Stores the implementation of the method (under some conditions, it's
+			' possible for a method to not return an implementation)
+			Local block$
+			
+			' Check to see if this method is implemented in a super type, and if it is,
+			' skip reimplementing it- the supertype's implementation will be used by the
+			' VMT for this type as well (for speed reasons)
 			Local parentImp:LExposedMethod = __methodExposedInParent(m)
 			
-			If m <> parentImp Then
+			If m <> parentImp And instMethod Then
 				Continue
 			EndIf
 			
-			block = m.Implementation(instMethod)
+			' Return the method implementation
+			block = m.Implementation(instMethod, globalname)
 			If block Then
 				outs :+ "~n"+block+"~n"
 			EndIf
@@ -185,7 +223,7 @@ Type LExposedType
 	Method __methodExposedInParent:LExposedMethod(current:LExposedMethod)
 		Local name$ = current.methodid.Name().ToLower()
 		
-		Local typ:TTypeId = typeid.SuperType()
+		Local typ:TTypeID = typeid.SuperType()
 		Local parentImp:LExposedMethod
 		While typ
 			Local exp:LExposedType = ForType(typ)
@@ -219,7 +257,10 @@ Type LExposedType
 		' Build list of exposed methods
 		For Local m:TMethod = EachIn typeid.Methods()
 			If "sendmessage^compare^new^delete^tostring".Find(m.Name().ToLower()) = -1 Then
-				methods.AddLast(New LExposedMethod.InitWithMethod(m, typeid))
+				Local meth:LExposedMethod = New LExposedMethod.InitWithMethod(m, typeid)
+				If meth Then
+					methods.AddLast(meth)
+				EndIf
 			EndIf
 		Next
 	End Method
@@ -233,12 +274,15 @@ Type LExposedType
 		
 		' Build list of exposed fields
 		For Local f:TField = EachIn typeid.Fields()
-			fields.AddLast(New LExposedField.InitWithField(f, typeid))
+			Local exf:LExposedField = New LExposedField.InitWithField(f, typeid)
+			If exf Then
+				fields.AddLast(exf)
+			EndIf
 		Next
 	End Method
 End Type
 
-' Builds up the information for all types
+' Caches relevant information for all types
 Function BuildTypeInfo()
 	DebugLog "Building type info..."
 	TTypeID._Update()
@@ -250,7 +294,7 @@ Private
 ' Recursively creates the information for types
 Function _buildTypeInfo(types:TList)
 	' Iterate over types and load data for them
-	For Local tid:TTypeId = EachIn types
+	For Local tid:TTypeID = EachIn types
 		New LExposedType.InitWithTypeID(tid)
 		_buildTypeInfo(tid.DerivedTypes())
 	Next
