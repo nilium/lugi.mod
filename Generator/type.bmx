@@ -14,6 +14,10 @@ Public
 
 Const CONSTRUCTOR_NAME$="constructor"
 
+Function ClearExposedTypes()
+	_exposedTypes.Clear()
+End Function
+
 Type LExposedType
 	Field exposed%
 	Field static%

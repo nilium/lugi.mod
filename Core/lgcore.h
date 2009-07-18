@@ -39,7 +39,8 @@ extern "C" {
 /**
 	\brief Macro to enable table-like behavior for BMax objects in Lua.
 	
-	\note This code is experimental and should be used with caution.
+	\note The code enabled by this macro is experimental and \em untested, it should be used with
+	extreme caution.
 	
 	When set to 1, LuGI will allow the indexing of BMax objects regardless of whether or not a key
 	is defined for the BMax type.  For example, given the type Account:
@@ -104,29 +105,36 @@ typedef enum {
 **/
 void p_lugi_init(lua_State *state);
 
-/** \brief undocumented function
+/** \brief Registers a method closure with the LuGI core.
 	
-		longer description
+		This method will add to LuGI's registry a method to be associated with a virtual method
+		table or alternatively a global function.  To register a global function, the BBClass passed
+		to p_lugi_register_method should be NULL.
 	
-	\author Noel Cower __MyCompanyName__
-	\date 2009-06-28
-	\param  description of parameter
-	\param  description of parameter
-	\return description of return value
-	\sa
+	\author Noel Cower
+	\date 2009-07-16
+	\param fn A pointer to the function to create a closure for.
+	\param name The name of the method.  E.g., \c "DoSomething".
+	\param clas The BBClass to associate the method with.  If NULL, it is assumed that the method is
+	static and will be pushed as a global variable.
+	\sa p_lugi_register_field
 **/
 void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas);
 
-/** \brief undocumented function
+/** \brief Registers a field name and offset with the LuGI core.
 	
-		longer description
+		This method will add to LuGI's registry a field offset and name to be associated with
+		object's of a specific BBClass (and its subclasses).
 	
-	\author Noel Cower __MyCompanyName__
-	\date 2009-06-28
-	\param  description of parameter
-	\param  description of parameter
-	\return description of return value
-	\sa
+	\author Noel Cower
+	\date 2009-07-16
+	\param offset The offset of the field in an instance of the type specified by the clas
+	parameter.
+	\param type The field type, one of fieldtype_e.  BOOLFIELDOPT can be or'd with any integer
+	field type to specify that the field should return a boolean value.
+	\param name The name of the field.  E.g., \c "RootNode".
+	\param clas The BBClass to associate the method with.  If NULL, an exception will be thrown.
+	\sa p_lugi_register_method
 **/
 void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas);
 
@@ -149,13 +157,17 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas);
 **/
 void lua_pushbmaxobject(lua_State *state, BBObject *obj);
 
-/** \brief undocumented function
+/** \brief Gets a BMax object off of the Lua stack.
 	
-		longer description
+		Valid types of objects to get off of the stack are strings, tables (converted to arrays),
+		and any instance of a custom type subclassing Object.
 	
 	\pre The state must have been initialized with lugi_init().
+	\pre The index specified must be a valid Lua stack index.
+	\pre The value at the index specified on the stack must be a valid BlitzMax object, a string, a
+	table, or nil.
 	
-	\author Noel Cower __MyCompanyName__
+	\author Noel Cower
 	\date 2009-06-28
 	\param state The Lua state whose stack you want to retrieve the Object from.
 	\param index The index in the stack where the Object is located.
@@ -169,29 +181,29 @@ BBObject *lua_tobmaxobject(lua_State *state, int index);
 
 /************************************ Array handling/conversion ***********************************/
 
-/** \brief undocumented function
+/** \brief Pushes a BlitzMax array onto the stack as a table.
 	
-		longer description
-	
-	\author Noel Cower __MyCompanyName__
+	\author Noel Cower
 	\date 2009-06-28
-	\param  description of parameter
+	\param state The Lua state whose stack you want to push the array onto.
 	\param  description of parameter
 	\return description of return value
-	\sa
+	\sa \ref arrays
 **/
 void lua_pushbmaxarray(lua_State* state, BBArray* arr);
 
-/** \brief undocumented function
+/** \brief Converts a Lua table to a BlitzMax array.
 	
-		longer description
+	\pre The state must have been initialized for use with LuGI.
+	\pre The index specified must be a valid Lua stack index.
+	\pre The value at the index specified on the stack must be a table.
 	
-	\author Noel Cower __MyCompanyName__
+	\author Noel Cower
 	\date 2009-06-28
-	\param  description of parameter
-	\param  description of parameter
-	\return description of return value
-	\sa
+	\param state The Lua state whose stack you want to retrieve the Object from.
+	\param index The index in the stack where the table is located.
+	\return A BBArray - the array may be empty or Null, depending on the contents of the table.
+	\sa \ref arrays
 **/
 BBArray *lua_tobmaxarray(lua_State *state, int index);
 

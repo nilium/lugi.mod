@@ -42,42 +42,41 @@
 	To start using LuGI, you should begin tagging your types, methods, and fields you wish to expose
 	with the appropriate metadata (\ref metadata).  These tags tell LuGI what types to generate glue
 	code for, and in some cases the type of code generated.  Currently, only types and instance
-	methods can be tagged, due to the lack of support in the Brl.Reflection module for functions
-	and class methods.
+	methods can be tagged, due to the lack of support in the Brl.Reflection module for functions,
+	class methods, etc.
 	
-	Once you've tagged some of your types and methods, import the LuGI code generation file into
-	your BlitzMax project, or make a copy of the tool and import the source code or module you want
-	to expose into the tool.  Follow either of the sections below to decide which option is best.
-	
-	\subsection in-gen Importing your source code into LuGIgen
-	
-	\todo Write documentation on how to import code into LuGIgen
+	Once you've tagged some of your types and methods, follow the instructions below to generate the
+	Lua glue code needed.
 	
 	\subsection in-project Importing LuGIgen into your project
 	
-	Take your existing project's main source file - for the sake of example, we'll say \c
-	main.bmx, and add Import "lugigen.bmx" to it.  Now add a call to GenerateGlueCode() before any
-	other operations occur.  Compile and run your program - it should exit after some time where it
-	may appear to do nothing.  This is because LuGIgen will generate source code, save it to a
-	\c glue/ subdirectory, and terminate the application.
+	Take your existing project's main source file or a module - for the sake of example, we'll say
+	\c main.bmx, and add Import LuGI.Generator to it. Next, add a call to \c GenerateGlueCode(URL:Object)
+	before any other operations occur.  Compile and run your program - it should exit after some time
+	where it may appear to do nothing.  \c GenerateGlueCode(..) will terminate the application once
+	it's done writing the generated code to the URL specified.
 	
-	Once this is done, feel free to remove the call to GenerateGlueCode() and lugigen.bmx from your
-	project.
+	\cGenerateGlueCode(..) takes a single argument: a URL to write the generated code to.  It's
+	defined as \c GenerateGlueCode(URL:Object) - the URL may be a stream, a string, or anything
+	accepted by the \c OpenStream(..) function.  It will attempt to open a write-only stream to
+	write generated code to.  If you would like to have it append code to an existing file, pass it
+	a stream you've initialized already.
+	
+	Once this is done, feel free to remove the call to \c GenerateGlueCode(..) and lugigen.bmx from
+	your project.
 	
 	\note In the event that you choose this option, you should ensure that come release, lugigen.bmx
 	is not included in your project.  It is not needed to use any functionality of LuGI at runtime.
 	
 	\subsection gen-done Using the generated code
 	
-	Now that you've got your \c glue/ directory, move it or its contents to wherever you'd like the
-	code to go, and import \c glue/glue-head.bmx into your main source code (or wherever your Lua
-	script code resides).
+	Now that you've got your \c glue code, move it or its contents to wherever you'd like the
+	code to go, and Include \c the output into your main source code.  You may also tweak the output
+	such that you can Import it rather than Include it.  However, Include is the simplest means of
+	getting the code imported into your project.  You will just have to make sure to include it in a
+	file that will have already imported everything used by the glue code.
 	
-	\note The glue code will import the code that it requires, so try to ensure that, at the very
-	least, you don't import any of the glue code into a file that has something the glue code is
-	exposing to Lua.  This will create a cyclic import and \em will cause errors during compilation.
-	
-	\note As such, avoid exposing any code pertaining to Lua itself, and avoid tightly coupled code
-	at all costs.
+	\em Finally, import LuGI.Core into your project and add a call to InitLuGI(lua_vm:Byte Ptr) to
+	initialize your Lua state for use with BlitzMax objects exposed via LuGI.
 
 **/

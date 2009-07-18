@@ -10,6 +10,9 @@ Public
 Function GenerateGlueCode(url:Object = Null)
 	Assert url Else "GenerateGlueCode: No output URL provided"
 	
+	' Clear existing types (in case the code is generating multiple wrappers)
+	ClearExposedTypes()
+	
 	Local output:TStream = OpenStream(url, False, True)
 	Assert output Else "GenerateGlueCode: Unable to create writeable output stream"
 	
