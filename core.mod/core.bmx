@@ -39,6 +39,10 @@ Import "lgcore.cpp"
 
 Public
 
+' LuGI field types - used by LuGI to determine how to access fields at runtime
+' The only reason these are public is because the generated code uses them, otherwise I'd hide
+' them away too.  But then if I hide them and use number constants in the generated code, we'll
+' get the chance that changing these later will break existing glue code, and doing that is bad.
 Const LUGI_BYTEFIELD:Int = $0001
 Const LUGI_SHORTFIELD:Int = $0002
 Const LUGI_INTFIELD:Int = $0004
@@ -48,6 +52,8 @@ Const LUGI_DOUBLEFIELD:Int = $0020
 Const LUGI_STRINGFIELD:Int = $0040
 Const LUGI_OBJECTFIELD:Int = $0080
 Const LUGI_ARRAYFIELD:Int = $0100
+' Optional flag to specify that an integer field (Int, Short, Byte, or Long) should be treated as a
+' boolean value when passed to Lua
 Const LUGI_BOOLFIELDOPT:Int = $8000
 
 Type LuGIInitFunction
