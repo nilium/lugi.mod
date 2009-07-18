@@ -20,6 +20,8 @@
 	THE SOFTWARE.
 */
 
+/* mainpage.dox */
+
 /** \mainpage LuGI API Documentation
 
 	\section intro Introduction
@@ -48,35 +50,72 @@
 	Once you've tagged some of your types and methods, follow the instructions below to generate the
 	Lua glue code needed.
 	
-	\subsection in-project Importing LuGIgen into your project
+	\subsection generating-code Generating Glue Code
 	
 	Take your existing project's main source file or a module - for the sake of example, we'll say
-	\c main.bmx, and add Import LuGI.Generator to it. Next, add a call to \c GenerateGlueCode(URL:Object)
-	before any other operations occur.  Compile and run your program - it should exit after some time
-	where it may appear to do nothing.  \c GenerateGlueCode(..) will terminate the application once
-	it's done writing the generated code to the URL specified.
+	\c main.bmx, and add \c Import \c LuGI.Generator to it. Next, add a call to
+	\c GenerateGlueCode(URL:Object) before any other operations occur.  To make sure you don't start
+	running the entire program, insert a call to \c End so that the program terminates once the glue
+	code is generated.
 	
-	\cGenerateGlueCode(..) takes a single argument: a URL to write the generated code to.  It's
+	\c GenerateGlueCode(..) takes a single argument: a URL to write the generated code to.  It's
 	defined as \c GenerateGlueCode(URL:Object) - the URL may be a stream, a string, or anything
 	accepted by the \c OpenStream(..) function.  It will attempt to open a write-only stream to
 	write generated code to.  If you would like to have it append code to an existing file, pass it
-	a stream you've initialized already.
+	a stream you've already initialized for appending.
 	
-	Once this is done, feel free to remove the call to \c GenerateGlueCode(..) and lugigen.bmx from
-	your project.
+	Once this is done, feel free to remove the call to \c GenerateGlueCode(..) and the import for
+	LuGI.Generator from your project.
 	
-	\note In the event that you choose this option, you should ensure that come release, lugigen.bmx
-	is not included in your project.  It is not needed to use any functionality of LuGI at runtime.
-	
-	\subsection gen-done Using the generated code
-	
-	Now that you've got your \c glue code, move it or its contents to wherever you'd like the
-	code to go, and Include \c the output into your main source code.  You may also tweak the output
-	such that you can Import it rather than Include it.  However, Include is the simplest means of
-	getting the code imported into your project.  You will just have to make sure to include it in a
-	file that will have already imported everything used by the glue code.
-	
-	\em Finally, import LuGI.Core into your project and add a call to InitLuGI(lua_vm:Byte Ptr) to
-	initialize your Lua state for use with BlitzMax objects exposed via LuGI.
+	An example of using the generator:
+	\code
+SuperStrict
 
+Import Your.Module
+Import "YourCode.bmx"
+
+Import LuGI.Generator
+
+GenerateGlueCode("glue.bmx")
+
+End
+	\endcode
+	
+	\note You should take care to make sure that LuGI.Generator is not included in a production
+	release of your code.
+	
+	\subsection gen-done Using the Generated Code
+	
+	Now that you've got your glue code, move it or its contents to wherever you'd like the
+	code to go, and \c Include the output into your main source code.  You may also tweak the output
+	such that you can \c Import it rather than \c Include it.  However, \c Include is the simplest
+	means of getting the code imported into your project.  You will just have to make sure to include
+	it in a file that will have already imported everything used by the glue code.
+	
+	\em Finally, import \c LuGI.Core into your project and add a call to \c InitLuGI(lua_vm:Byte Ptr) to
+	initialize your Lua state for use with BlitzMax objects exposed via LuGI.
+	
+	An example of using the generated code:
+	\code
+' YourCode.bmx
+
+SuperStrict
+
+Import LuGI.Core
+Import Your.Module
+
+' Include your glue code
+Include "glue.bmx"
+
+' Main code
+
+Local state:Byte Ptr = luaL_newstate()
+
+InitLuGI(state)
+
+' .. do some stuff
+
+lua_close()
+	\endcode
+	
 **/

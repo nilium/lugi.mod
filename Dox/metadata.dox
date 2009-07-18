@@ -1,0 +1,97 @@
+/*
+	Copyright (c) 2009 Noel R. Cower
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
+/* metadat.dox */
+
+/** \page metadata Metadata
+	There is a good amount of different metadata tags you can give your types, methods, and fields to
+	control and customize what kind of glue code is generated for LuGI.  These lists provide
+	explanations for what each metadata tag does.
+	
+	\section type-meta Type Metadata
+	
+	<dl>
+		<dt><code>expose</code></dt>
+			<dd><p>Specifies that this type will have code generated for it.  Without this, all other
+			metadata have no effect.</p></dd>
+		<dt><code>hidefields</code></dt>
+			<dd><p>Specifies that all fields for the type should be hidden.  This is essentially a
+			shortcut to tag all fields with the <code>hidden</code> metadata.</p></dd>
+		<dt><code>static</code></dt>
+			<dd><p>Specifies that the type should be exposed as a static type - such as a singleton.
+			LuGI will create a single instance of this type per initialized Lua state and set it to a
+			global variable.  Static types do not have constructors.</p></dd>
+		<dt><code>noclass</code></dt>
+			<dd>
+			<p>To be used in addition to <code>static</code>, this will cause LuGI to treat this type's
+			methods as global functions in Lua.  When using the default LuGI code generator, a global
+			instance of the type is created at program startup that will be shared between all Lua
+			states.  It is recommended that you ensure the code for these methods is thread-safe and
+			does not rely on being used within a specific Lua state, as it will be treated like a
+			singleton type.</p>
+			
+			<p>If the <code>static</code> metadata is not included, this metadata has no effect.</p>
+			</dd>
+		<dt><code>constructor = &quot;ConstructorName&quot;</code></dt>
+			<dd><p>Used to set the name of the Lua constructor for a type.  By default, constructors
+			use <code>New[TypeName]</code>.  Using this, you can override the default for a type.</p></dd>
+		<dt><code>disablenew</code></dt>
+			<dd><p>This will disable the generation of code to expose a constructor for the type.  If
+			this metadata is provided, Lua scripts will not be able to allocate objects of this type,
+			they will only be able to interact with instances provided to it.</p></dd>
+		<dt><code>rename = &quot;NewName&quot;</code></dt>
+			<dd><p>This is used to rename types.  This often has little effect on source code aside
+			from renaming a type's default constructor (default is New[TypeName]).</p></dd>
+	</dl>
+	
+	\section meth-meta Method Metadata
+	
+	<dl>
+		<dt><code>rename = &quot;NewName&quot;</code></dt>
+			<dd><p>Renames a method so that it has a different name than the one given.  If you have a
+			simplified method to expose to Lua versus one that is not easily supported, you can hide
+			the original method and use rename to specify that the simplified method has the same name
+			as the original.</p></dd>
+		<dt><code>hidden</code></dt>
+			<dd><p>If set, this method will not be wrapped or exposed to Lua.  This can be used to
+			exclude private or hidden methods that you do not want the script to have access to.</p></dd>
+		<dt><code>bool</code></dt>
+			<dd><p>If set, the method will return boolean values to Lua if its return type is Int,
+			Short, Byte, or Long.  All other types will be treated normally.</p></dd>
+		<dt><code>binding = &quot;late&quot; OR &quot;immediate&quot;</code></dt>
+			<dd><p>Unused in LuGI.  Is used by LRef, LuGI's predecessor, to specify the binding type
+			for a method.  Since LuGI does not rely on resolving methods in the same way as LRef, this
+			metadata is not used.</p></dd>
+	</dl>
+	
+	\section field-meta Field Metadata
+	
+	<dl>
+		<dt><code>hidden</code></dt>
+			<dd><p>If set, this field will not be wrapped or exposed to Lua.  This can used to hide
+			data from Lua scripts.</p></dd>
+		<dt><code>bool</code></dt>
+			<dd><p>If set, accessing the field will return a boolean value to Lua if it has the type
+			Int, Short, Byte, or Long.  All other types will be treated normally.</p></dd>
+	</dl>
+	
+**/
