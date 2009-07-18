@@ -1,13 +1,15 @@
-SuperStrict
+'SuperStrict
+
+Public
 
 ' Prefixes
-Global GLOBAL_PREFIX$="lugi_"	' Prefix applied before other prefixes (e.g., ${GLOBAL_PREFIX}${METH_PREFIX}${TYPENAME}_${METHODNAME})
-Global METH_PREFIX$="glue_"		' Prefix applied to method implementations
-Global NOCLASS_VAR_PREFIX$ = "lugi_glob_"
-Global INIT_PREFIX$="p_lugi_init"
+Global LUGI_GLOBAL_PREFIX$="lugi_"	' Prefix applied before other prefixes (e.g., ${GLOBAL_PREFIX}${METH_PREFIX}${TYPENAME}_${METHODNAME})
+Global LUGI_METH_PREFIX$="glue_"		' Prefix applied to method implementations
+Global LUGI_NOCLASS_VAR_PREFIX$ = "lugi_glob_"
+Global LUGI_INIT_PREFIX$="p_lugi_init"
 
 ' Options
-Global METH_NODEBUG:Int = False	' Specifies whether or not to add the 'NoDebug' to methods
+Global LUGI_METH_NODEBUG:Int = False	' Specifies whether or not to add the 'NoDebug' to methods
 
 ''' On Metadata:
 ' Metadata specified may be different between modules.  The default options are what is encourages,

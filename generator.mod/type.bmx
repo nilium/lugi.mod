@@ -1,16 +1,14 @@
-SuperStrict
+'SuperStrict
 
-Import "field.bmx"
-Import "method.bmx"
-Import "metadata.bmx"
+'Import "field.bmx"
+'Import "method.bmx"
+'Import "metadata.bmx"
 
-Import Brl.LinkedList
+'Import Brl.LinkedList
 
 Private
 
 Global _exposedTypes:TList = New TList
-
-Public
 
 Const CONSTRUCTOR_NAME$="constructor"
 
@@ -108,7 +106,7 @@ Type LExposedType
 		EndIf
 		
 		If static And noclass Then
-			globalname = GLOBAL_PREFIX+NOCLASS_VAR_PREFIX+typeid.Name()+"_"+GenerateUniqueTag(6)
+			globalname = LUGI_GLOBAL_PREFIX+LUGI_NOCLASS_VAR_PREFIX+typeid.Name()+"_"+GenerateUniqueTag(6)
 		EndIf
 		
 		__initMethods

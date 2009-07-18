@@ -1,4 +1,8 @@
-SuperStrict
+'SuperStrict
+
+'Import brl.Map
+
+Private
 
 Rem
 Inserts strings from the passed array into the string at marked insertion points.

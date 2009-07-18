@@ -1,10 +1,10 @@
-Strict
+'SuperStrict
 
-Import "metadata.bmx"
-
-Const REGISTER_FIELD_NAME$ = "register_field"
+'Import "metadata.bmx"
 
 Private
+
+Const REGISTER_FIELD_NAME$ = "register_field"
 
 Function TypeStringForField:String(tid:TTypeID, fid:TField)
 	Local typ$
@@ -45,8 +45,6 @@ Function TypeStringForField:String(tid:TTypeID, fid:TField)
 	
 	Return typ
 End Function
-
-Public
 
 Type LExposedField
 	Field fieldid:TField

@@ -1,21 +1,19 @@
-Strict
+'Strict
 
-Import brl.Map
+'Import brl.Map
 
-Import "metadata.bmx"		' Metadata names
-Import "utility.bmx"		' FormatString
-
-Const REGISTER_METHOD_NAME$ = "register_method"
+'Import "metadata.bmx"		' Metadata names
+'Import "utility.bmx"		' FormatString
 
 Private
+
+Const REGISTER_METHOD_NAME$ = "register_method"
 
 Global g_CanReturnBoolTypes:TList = New TList
 g_CanReturnBoolTypes.AddLast(IntTypeID) ' Trying to do this in order of which would be most likely..
 g_CanReturnBoolTypes.AddLast(ShortTypeID)
 g_CanReturnBoolTypes.AddLast(ByteTypeID)
 g_CanReturnBoolTypes.AddLast(LongTypeID)
-
-Public
 
 Type LExposedMethod
 	Field methodid:TMethod
@@ -74,7 +72,7 @@ Type LExposedMethod
 			Return Null
 		EndIf
 		
-		Return GLOBAL_PREFIX+METH_PREFIX+owner.Name()+"_"+name+tag
+		Return LUGI_GLOBAL_PREFIX+LUGI_METH_PREFIX+owner.Name()+"_"+name+tag
 	End Method
 	
 	' Returns the implementation of the method
@@ -86,7 +84,7 @@ Type LExposedMethod
 		Local head$ = "Function "+ImplementationName()+":Int( lua_vm:Byte Ptr )"
 		
 		' Whether or not to add the NoDebug flag to method glue functions
-		If METH_NODEBUG Then
+		If LUGI_METH_NODEBUG Then
 			head :+ " NoDebug"
 		EndIf
 		
