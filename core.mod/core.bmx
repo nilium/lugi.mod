@@ -154,6 +154,9 @@ End Extern
 Public
 
 Extern "C"
+	' Determining if an object on the stack is a BMax object
+	Function lua_isbmaxobject:Int(state@ Ptr, index:Int)
+	
 	' Pushing/getting BBObjects (BBObjects, BBStrings, and BBArrays to tables/tables to BBArrays respectively)
 	Function lua_pushbmaxobject(state@ Ptr, obj:Object)
 	Function lua_tobmaxobject:Object(state@ Ptr, index:Int)

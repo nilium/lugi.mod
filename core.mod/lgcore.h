@@ -59,7 +59,9 @@ extern "C" {
 	account.Age = 32 -- adds a key-value pair {"Age", 32} to the object's environment table
 	\endcode
 **/
-#define BMX_TABLE_SUPPORT 0
+#ifndef BMX_TABLE_SUPPORT
+#	define BMX_TABLE_SUPPORT 0
+#endif
 
 
 
@@ -151,7 +153,7 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas);
 	
 	\author Noel Cower
 	\date 2009-06-28
-	\param state The Lua state whose stack you want to push the object onto.
+	\param state The Lua state whose stack you want to push the Object onto.
 	\param obj The object to push onto the stack.
 	\sa lua_pushbmaxarray(lua_State *state, BBArray *arr)
 **/
@@ -177,6 +179,23 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj);
 **/
 BBObject *lua_tobmaxobject(lua_State *state, int index);
 
+/** \brief Returns whether or not the value at the index is a BlitzMax object.
+	
+	This currently works by checking the metatable of the object.  If the object has the generic
+	metatable for BlitzMax objects, then it is an object.
+	
+	\pre The state must have been initialized for use with LuGI.
+	\pre The index specified must be a valid Lua stack index.
+	
+	\author Noel Cower
+	\date 2009-07-20
+	\param state The Lua state whose stack you want to retrieve the Object from.
+	\param index The index in the stack where the value is located.
+	\return 1 if the value is a BlitzMax object, otherwise 0.
+	\sa \ref arrays
+**/
+int32_t lua_isbmaxobject(lua_State *state, int index);
+
 
 
 /************************************ Array handling/conversion ***********************************/
@@ -200,7 +219,7 @@ void lua_pushbmaxarray(lua_State* state, BBArray* arr);
 	
 	\author Noel Cower
 	\date 2009-06-28
-	\param state The Lua state whose stack you want to retrieve the Object from.
+	\param state The Lua state whose stack you want to retrieve the array from.
 	\param index The index in the stack where the table is located.
 	\return A BBArray - the array may be empty or Null, depending on the contents of the table.
 	\sa \ref arrays

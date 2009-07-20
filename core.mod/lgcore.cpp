@@ -402,7 +402,7 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 	*data = obj;
 #endif
 	
-#if BMX_TABLE_SUPPORT == 1
+#if BMX_TABLE_SUPPORT > 0
 	/*
 	  this is part of an unsupported feature to enable table-like behavior for BMax objects
 	  decided not to include it (by default, anyway) because, frankly, it doesn't fit in when
@@ -465,6 +465,32 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 			luaL_error(state, ERRORSTR("@lua_tobmaxobject: Value at index (%d) is not an object."), index);
 			return &bbNullObject;
 	}
+}
+
+
+int32_t lua_isbmaxobject(lua_State *state, int index) {
+	/* first check the type of the value to make sure it's correct */
+#ifdef THREADED
+	if ( lua_type(state, index) != LUA_TLIGHTUSERDATA )
+#else
+	if ( lua_type(state, index) != LUA_TUSERDATA )
+#endif
+		return 0;
+	
+	/* get the metatable for the value at the index */
+	lua_getmetatable(state, index);
+	
+	/* get the generic metatable */
+	lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
+	lua_gettable(state, LUA_REGISTRYINDEX);
+	
+	/* compare the two */
+	int result = lua_equal(state, -1, -2);
+	
+	/* pop both metatables */
+	lua_pop(state, 2);
+	
+	return result;
 }
 
 
@@ -816,7 +842,7 @@ static int lugi_index_object(lua_State *state) {
 		
 	} /* key is string */
 	
-#if BMX_TABLE_SUPPORT != 1
+#if BMX_TABLE_SUPPORT < 1
 	/* notify that there was an error accessing a field or method that does not exist */
 	return luaL_error(state, ERRORSTR("@lugi_index_object: Index for object is not a valid field or method."));
 #else
@@ -933,7 +959,7 @@ static int lugi_newindex_object(lua_State *state) {
 		} while (clas != NULL);
 	} /* key is string */
 	
-#if BMX_TABLE_SUPPORT != 0
+#if BMX_TABLE_SUPPORT < 1
 	return luaL_error(state, ERRORSTR("@lugi_newindex_object: Index for object is not a valid field or method."));
 #else
 	/* prior table behavior for BMax objects - disabled by default */
