@@ -36,6 +36,9 @@ Import brl.Random
 Import brl.Reflection
 Import brl.Stream
 Import Brl.System
+?Threaded
+Import brl.Threads
+?
 
 Private
 
