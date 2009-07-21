@@ -617,7 +617,7 @@ BBArray *lua_tobmaxarray(lua_State *state, int index) {
 			p = (BBString**)BBARRAYDATA(arr, arr->dims);
 			
 			*p = bbStringFromCString(lua_tostring(state, -1));
-			BBRETAIN(*p++);
+			BBRETAIN((BBObject*)*p++);
 			lua_pop(state, 1);
 			
 			for (; table_index <= len; ++table_index) {
@@ -625,7 +625,7 @@ BBArray *lua_tobmaxarray(lua_State *state, int index) {
 				lua_gettable(state, index);
 				
 				*p = bbStringFromCString(lua_tostring(state, -1));
-				BBRETAIN(*p++);
+				BBRETAIN((BBObject*)*p++);
 				
 				lua_pop(state, 1);
 			}
@@ -895,14 +895,14 @@ static int lugi_newindex_object(lua_State *state) {
 						case STRINGFIELD: {
 							const char *strbuf = lua_tostring(state, 3);
 							
-							BBRELEASE(field->string_value);
-							BBRETAIN(field->string_value = bbStringFromCString(strbuf));
+							BBRELEASE((BBObject*)field->string_value);
+							BBRETAIN((BBObject*)(field->string_value = bbStringFromCString(strbuf)));
 						} break;
 					
 						case ARRAYFIELD:
-						BBRELEASE(field->arr_value);
+						BBRELEASE((BBObject*)field->arr_value);
 						
-						BBRETAIN(field->arr_value = lua_tobmaxarray(state, 3));
+						BBRETAIN((BBObject*)(field->arr_value = lua_tobmaxarray(state, 3)));
 						break;
 					
 						case OBJECTFIELD:
