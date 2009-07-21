@@ -635,9 +635,9 @@ BBArray *lua_tobmaxarray(lua_State *state, int index) {
 		
 		case LUA_TTABLE:		/* array of arrays (arrays inside of arrays do not have to be the same type) */
 #ifdef THREADED
-		case LUA_TUSERDATA:		/* array of objects */
+		case LUA_TLIGHTUSERDATA:		/* array of objects */
 #else
-		case LUA_TLIGHTUSERDATA:
+		case LUA_TUSERDATA:
 #endif
 		{
 			BBObject **p;
