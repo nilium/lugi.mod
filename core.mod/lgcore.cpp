@@ -948,6 +948,7 @@ static int lugi_gc_object(lua_State *state) {
 	BBObject **obj = (BBObject**)lua_touserdata(state,1);
 	BBRELEASE(*obj);
 	*obj = NULL;
+	return 0;
 }
 #endif
 
