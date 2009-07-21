@@ -156,18 +156,21 @@ Function LuaPushFunctionForTypeID$(typ:TTypeID)
 	EndIf
 	
 	Select typ
-		Case Null
+	Case Null
 		Return Null
-		Case ArrayTypeId
+	Case ArrayTypeId
 		Return "lua_pushbmaxarray"
-		Case StringTypeId
+	Case StringTypeId
 		Return "lua_pushstring"
-		Case ByteTypeId, ShortTypeId, IntTypeId, LongTypeId
+	Case ByteTypeId, ShortTypeId, IntTypeId, LongTypeId
 		Return "lua_pushinteger"
-		Case FloatTypeId, DoubleTypeId
+	Case FloatTypeId, DoubleTypeId
 		Return "lua_pushnumber"
-		Default
-		Return "lua_pushbmaxobject"
+	Default
+		If typ.ExtendsType(ObjectTypeId) Then
+			Return "lua_pushbmaxobject"
+		EndIf
+		Return Null
 	End Select
 End Function
 

@@ -50,8 +50,10 @@ Function TypeStringForField:String(tid:TTypeID, fid:TField)
 		Default
 			If ArrayTypeId._class = tid._class Then
 				typ = "ARRAYFIELD"
-			Else
+			ElseIf tid.ExtendsType(ObjectTypeId) Then
 				typ = "OBJECTFIELD"
+			Else
+				Return Null
 			EndIf
 	End Select
 	
@@ -77,7 +79,13 @@ Type LExposedField
 		fieldid = id
 		
 		If Not ((owner.Metadata(LUGI_META_HIDEFIELDS).ToInt()>0) Or (fieldid.Metadata(LUGI_META_HIDDEN).ToInt()>0)) Then
-			registration = REGISTER_FIELD_NAME+"( " + fieldid._index + ", " + TypeStringForField(fieldid.TypeId(), fieldid) + ", ~q" + fieldid.Name() + "~q, Byte Ptr(TTypeID.ForName(~q" + owner.Name() + "~q)._class) )"
+			Local typestring$ = TypeStringForField(fieldid.TypeId(), fieldid)
+			If typestring Then
+				registration = REGISTER_FIELD_NAME+"( " + fieldid._index + ", " + typestring + ", ~q" + fieldid.Name() + "~q, Byte Ptr(TTypeID.ForName(~q" + owner.Name() + "~q)._class) )"
+			Else
+				' Field of this type is unsupported/has no specified
+				Return Null
+			EndIf
 		Else
 			Return Null
 		EndIf

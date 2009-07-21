@@ -128,9 +128,10 @@ Type LExposedMethod
 		EndIf
 		
 		Local retType:TTypeID = methodid.TypeID()
+		Local pushfn$ = LuaPushFunctionForTypeID(retType)
 		' select the push function needed depending on whether or not the method is to return
 		' a bool and if it matches a type that can be used to return a bool
-		If retType Then
+		If retType And pushfn Then
 			If methodid.Metadata(LUGI_META_BOOL).ToInt()>0 And g_CanReturnBoolTypes.Contains(retType) Then
 				outs :+ "~tlua_pushboolean"
 			Else
@@ -140,7 +141,7 @@ Type LExposedMethod
 			' method parameters
 			outs :+ "( lua_vm, obj."+methodid.Name()+"("+(", ".Join(__argNames()))+") )~n~n~tReturn 1~n"
 		Else
-			' Method doesn't have a return type, returns nothing
+			' Method doesn't have a return type (or a supported return type), returns nothing
 			outs :+ "~t"+methodid.Name()+"("+(", ".Join(__argNames()))+")~n~n~tReturn 0~n"
 		EndIf
 		
