@@ -156,6 +156,8 @@ Function LuaPushFunctionForTypeID$(typ:TTypeID)
 	EndIf
 	
 	Select typ
+		Case Null
+		Return Null
 		Case ArrayTypeId
 		Return "lua_pushbmaxarray"
 		Case StringTypeId

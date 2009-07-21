@@ -113,7 +113,7 @@ Type LExposedMethod
 		head :+ "~n"
 		
 		' Tail is same for all methods: return 1 and end function
-		Local tail$ = "~n~tReturn 1~nEnd Function~n"
+		Local tail$ = "~nEnd Function~n"
 		
 		' output string always starts with the head
 		Local outs$ = head
@@ -130,14 +130,20 @@ Type LExposedMethod
 		Local retType:TTypeID = methodid.TypeID()
 		' select the push function needed depending on whether or not the method is to return
 		' a bool and if it matches a type that can be used to return a bool
-		If methodid.Metadata(LUGI_META_BOOL).ToInt()>0 And g_CanReturnBoolTypes.Contains(retType) Then
-			outs :+ "~tlua_pushboolean"
+		If retType Then
+			If methodid.Metadata(LUGI_META_BOOL).ToInt()>0 And g_CanReturnBoolTypes.Contains(retType) Then
+				outs :+ "~tlua_pushboolean"
+			Else
+				outs :+ "~t"+LuaPushFunctionForTypeID(retType)
+			EndIf
+		
+			' method parameters
+			outs :+ "( lua_vm, obj."+methodid.Name()+"("+(", ".Join(__argNames()))+") )~n~n~tReturn 1~n"
 		Else
-			outs :+ "~t"+LuaPushFunctionForTypeID(retType)
+			' Method doesn't have a return type, returns nothing
+			outs :+ "~t"+methodid.Name()+"("+(", ".Join(__argNames()))+")~n~n~tReturn 0~n"
 		EndIf
 		
-		' method parameters
-		outs :+ "( lua_vm, obj."+methodid.Name()+"("+(", ".Join(__argNames()))+") )~n"
 		outs :+ tail
 		
 		Return outs
