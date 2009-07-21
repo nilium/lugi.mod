@@ -142,7 +142,7 @@ Type LExposedMethod
 			outs :+ "( lua_vm, obj."+methodid.Name()+"("+(", ".Join(__argNames()))+") )~n~n~tReturn 1~n"
 		Else
 			' Method doesn't have a return type (or a supported return type), returns nothing
-			outs :+ "~t"+methodid.Name()+"("+(", ".Join(__argNames()))+")~n~n~tReturn 0~n"
+			outs :+ "~tobj."+methodid.Name()+"("+(", ".Join(__argNames()))+")~n~n~tReturn 0~n"
 		EndIf
 		
 		outs :+ tail
