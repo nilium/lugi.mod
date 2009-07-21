@@ -135,7 +135,7 @@ Type LExposedMethod
 			If methodid.Metadata(LUGI_META_BOOL).ToInt()>0 And g_CanReturnBoolTypes.Contains(retType) Then
 				outs :+ "~tlua_pushboolean"
 			Else
-				outs :+ "~t"+LuaPushFunctionForTypeID(retType)
+				outs :+ "~t"+pushfn
 			EndIf
 		
 			' method parameters
