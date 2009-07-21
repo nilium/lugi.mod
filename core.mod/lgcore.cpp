@@ -438,6 +438,10 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 	/* check the type at the index */
 	switch(lua_type(state, index))
 	{
+		case LUA_TNONE:
+			luaL_error(state, ERRORSTR("@lua_tobmaxobject: Invalid index (%d)"), index);
+			return &bbNullObject;
+		
 		case LUA_TNIL:				/* return null for nil */
 			return &bbNullObject;
 		
@@ -454,10 +458,12 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 		/* get an object out of the userdata */
 #ifdef THREADED
 		case LUA_TLIGHTUSERDATA:
-			return (BBObject*)lua_touserdata(state, index);
+			if ( lua_isbmaxobject(state, index) != 0 )
+				return (BBObject*)lua_touserdata(state, index);
 #else
 		case LUA_TUSERDATA:
-			return *(BBObject**)lua_touserdata(state, index);
+			if ( lua_isbmaxobject(state, index) != 0 )
+				return *(BBObject**)lua_touserdata(state, index);
 #endif
 		
 		/* and the best default ever: an error */
@@ -569,6 +575,10 @@ void lua_pushbmaxarray(lua_State *state, BBArray *arr) {
 BBArray *lua_tobmaxarray(lua_State *state, int index) {
 	switch (lua_type(state, index))
 	{
+		case LUA_TNONE:
+			luaL_error(state, ERRORSTR("@lua_tobmaxarray: Invalid index (%d)"), index);
+			return &bbEmptyArray;
+		
 		case LUA_TNIL:
 			return &bbEmptyArray;
 		
