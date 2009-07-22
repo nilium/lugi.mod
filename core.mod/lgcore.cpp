@@ -894,21 +894,21 @@ static int lugi_newindex_object(lua_State *state) {
 					
 						case STRINGFIELD: {
 							const char *strbuf = lua_tostring(state, 3);
-							
-							BBRELEASE((BBObject*)field->string_value);
+							BBString *last = field->string_value;
 							BBRETAIN((BBObject*)(field->string_value = bbStringFromCString(strbuf)));
+							BBRELEASE((BBObject*)last);
 						} break;
 					
-						case ARRAYFIELD:
-						BBRELEASE((BBObject*)field->arr_value);
-						
-						BBRETAIN((BBObject*)(field->arr_value = lua_tobmaxarray(state, 3)));
-						break;
+						case ARRAYFIELD: {
+							BBArray *last = field->arr_value;
+							BBRETAIN((BBObject*)(field->arr_value = lua_tobmaxarray(state, 3)));
+							BBRELEASE((BBObject*)last);
+						} break;
 					
 						case OBJECTFIELD:
-						BBRELEASE(field->obj_value);
-						
+						BBObject *last = field->obj_value;
 						BBRETAIN(field->obj_value = lua_tobmaxobject(state, 3));
+						BBRELEASE(last);
 						break;
 					
 						default:
