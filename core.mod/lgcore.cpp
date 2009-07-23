@@ -92,16 +92,25 @@ typedef enum {
 /** Structure containing information pertaining to the glue code - like reflection for the blind **/
 typedef struct s_glueinfo glueinfo_t;
 
+#pragma pack(push)
+#pragma pack(1)
+
+typedef struct s_fieldinfo
+{
+	uint16_t type;
+	uint16_t offset;
+} fieldinfo_t;
+
+#pragma pack(pop)
+
 struct s_glueinfo {
 	infotype_e type;
 	union {
 		lua_CFunction fn;			/* glue method */
-		struct {
-			unsigned short type;		/* the type of field */
-			unsigned short offset;		/* the offset of the field in the object */
-		} field;
+		fieldinfo_t field;
+		uint32_t fieldint;
 	} data;
-	char *name;					/* method name */
+	char *name;						/* method name */
 	BBClass *clas;					/* NULL if static */
 	glueinfo_t *next;				/* next function */
 };
@@ -217,7 +226,7 @@ void p_lugi_init(lua_State *state) {
 				break;
 				
 				case FIELDTYPE:
-				lua_pushinteger(state, ((int)info->data.field.offset & 0xFF) | ((int)info->data.field.type << 16));
+				lua_pushinteger(state, info->data.fieldint);
 				break;
 				
 				default:
@@ -729,13 +738,12 @@ static int lugi_index_object(lua_State *state) {
 			
 				if (type == LUA_TNUMBER) {		/* getting the value of a field */
 					int fieldopt = lua_tointeger(state, -1);
-					unsigned short type = fieldopt>>16;
-					unsigned short offset = fieldopt&0xFFFF;
-					bmx_field *field = (bmx_field*)((char*)obj+offset);
+					fieldinfo_t info = *(fieldinfo_t*)&fieldopt;
+					bmx_field *field = (bmx_field*)((char*)obj+info.offset);
 					
-					switch (type&(~BOOLFIELDOPT)) {
+					switch (info.type&(~BOOLFIELDOPT)) {
 						case BYTEFIELD:
-						if (type&BOOLFIELDOPT) {
+						if (info.type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->byte_value);
 						} else {
 							lua_pushinteger(state, field->byte_value);
@@ -743,7 +751,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						case SHORTFIELD:
-						if (type&BOOLFIELDOPT) {
+						if (info.type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->short_value);
 						} else {
 							lua_pushinteger(state, field->short_value);
@@ -751,7 +759,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						case INTFIELD:
-						if (type&BOOLFIELDOPT) {
+						if (info.type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->int_value);
 						} else {
 							lua_pushinteger(state, field->int_value);
@@ -767,7 +775,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						case LONGFIELD:
-						if (type&BOOLFIELDOPT) {
+						if (info.type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->long_value);
 						} else {
 							lua_pushinteger(state, field->long_value);
@@ -789,7 +797,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						default:
-						return luaL_error(state, ERRORSTR("@lugi_index_object: Unrecognized field type (%d)."), type);
+						return luaL_error(state, ERRORSTR("@lugi_index_object: Unrecognized field type (%d)."), info.type);
 						break;
 					}
 					return 1;
@@ -844,13 +852,12 @@ static int lugi_newindex_object(lua_State *state) {
 				
 				if (lua_type(state, -1) == LUA_TNUMBER) {		/* getting the value of a field */
 					int fieldopt = lua_tointeger(state, -1);
-					unsigned short type = (unsigned short)fieldopt>>16;
-					unsigned short offset = (unsigned short)fieldopt;
-					bmx_field *field = (bmx_field*)((char*)obj+offset);
+					fieldinfo_t info = *(fieldinfo_t*)&fieldopt;
+					bmx_field *field = (bmx_field*)((char*)obj+info.offset);
 					
 					clas = NULL;
 					
-					switch (type) /* set the value of a field */
+					switch (info.type) /* set the value of a field */
 					{
 						case BYTEFIELD:
 						if (lua_type(state, 3) == LUA_TBOOLEAN) {
@@ -912,7 +919,7 @@ static int lugi_newindex_object(lua_State *state) {
 						break;
 					
 						default:
-						return luaL_error(state, ERRORSTR("@lugi_newindex_object: Unrecognized field type (%d)."), type);
+						return luaL_error(state, ERRORSTR("@lugi_newindex_object: Unrecognized field type (%d)."), info.type);
 						break;
 					} /* set value based on type */
 					return 0;
