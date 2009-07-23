@@ -38,6 +38,15 @@ Function ClearExposedTypes()
 	_exposedTypes.Clear()
 End Function
 
+Function ArrayContains:Int(arr:String[], str$)
+	For Local idx:Int = 0 Until arr.Length
+		If arr[idx].Compare(str) = 0 Then
+			Return True
+		EndIf
+	Next
+	Return False
+End Function
+
 Type LExposedType
 	Field exposed%
 	Field static%
@@ -103,7 +112,8 @@ Type LExposedType
 		
 		exposed = typeid.Metadata(LUGI_META_EXPOSE).ToInt()>0
 		
-		If Not exposed Then
+		Local cat:String = typeid.Metadata(LUGI_META_CATEGORY)
+		If Not exposed Or ( LUGI_CATEGORIES_ARR.Length And Not ArrayContains(LUGI_CATEGORIES_ARR, cat) ) Then
 			Return Null
 		EndIf
 		

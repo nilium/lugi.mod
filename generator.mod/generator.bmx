@@ -63,6 +63,17 @@ Function GenerateGlueCode(url:Object = Null)
 	
 	SeedRndWithDateTime
 	
+	' Set up the categories array
+	LUGI_CATEGORIES_STRING = LUGI_CATEGORIES
+	If LUGI_CATEGORIES_STRING.Trim().Length Then
+		LUGI_CATEGORIES_ARR = LUGI_CATEGORIES_STRING.Split(",")
+		For Local idx:Int = 0 Until LUGI_CATEGORIES_ARR.Length
+			LUGI_CATEGORIES_ARR[idx] = LUGI_CATEGORIES_ARR[idx].Trim()
+		Next
+	Else
+		LUGI_CATEGORIES_ARR = New String[0]
+	EndIf
+	
 	BuildTypeInfo()
 	
 	output.WriteString("Private~n~n")

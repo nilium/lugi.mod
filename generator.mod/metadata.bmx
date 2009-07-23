@@ -22,6 +22,11 @@ EndRem
 
 'SuperStrict
 
+Private
+
+Global LUGI_CATEGORIES_ARR:String[]
+Global LUGI_CATEGORIES_STRING:String = ""
+
 Public
 
 ' Prefixes
@@ -32,6 +37,7 @@ Global LUGI_INIT_PREFIX$="p_lugi_init"
 
 ' Options
 Global LUGI_METH_NODEBUG:Int = False	' Specifies whether or not to add the 'NoDebug' to methods
+Global LUGI_CATEGORIES:String = ""		' Specifies the categories to generate code for (each category separated by a comma).  Categories are case sensitive.
 
 ''' On Metadata:
 ' Metadata specified may be different between modules.  The default options are what is encourages,
@@ -46,6 +52,7 @@ Global LUGI_META_NOCLASS$ = "noclass"		' Suggests to LuGI that the type's method
 Global LUGI_META_STATIC$ = "static"			' Suggests to LuGI that the type should be made static (one instance is created as a global variable)
 Global LUGI_META_CONSTRUCTOR$ = "constructor"' Sets the name of a type's constructor
 Global LUGI_META_DISABLECONSTRUCTOR$ = "disablenew"' Sets whether or not the type can be instanciated in Lua
+Global LUGI_META_CATEGORY$ = "category" ' Sets the category/section/namespace of the type (used to filter types when generating code)
 
 ' Types & Methods
 Global LUGI_META_RENAME$ = "rename"			' Renames a method or type
