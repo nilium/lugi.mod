@@ -932,8 +932,7 @@ static int lugi_newindex_object(lua_State *state) {
 							field->long_value = lua_toboolean(state, 3);
 						} else {
 							field->long_value = lua_tointeger(state, 3);
-						}
-						break;
+						} break;
 					
 						case STRINGFIELD: {
 							const char *strbuf = lua_tostring(state, 3);
@@ -948,11 +947,11 @@ static int lugi_newindex_object(lua_State *state) {
 							BBRELEASE((BBObject*)last);
 						} break;
 					
-						case OBJECTFIELD:
+						case OBJECTFIELD: {
 						BBObject *last = field->obj_value;
 						BBRETAIN(field->obj_value = lua_tobmaxobject(state, 3));
 						BBRELEASE(last);
-						break;
+						} break;
 					
 						default:
 						return luaL_error(state, ERRORSTR("@lugi_newindex_object: Unrecognized field type (%d)."), info.type);
