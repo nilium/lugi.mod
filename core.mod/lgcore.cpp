@@ -475,6 +475,7 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 
 
 int32_t lua_isbmaxobject(lua_State *state, int index) {
+	int result;
 	/* first check the type of the value to make sure it's correct */
 #ifdef THREADED
 	if ( lua_type(state, index) != LUA_TLIGHTUSERDATA )
@@ -491,7 +492,7 @@ int32_t lua_isbmaxobject(lua_State *state, int index) {
 	lua_gettable(state, LUA_REGISTRYINDEX);
 	
 	/* compare the two */
-	int result = lua_equal(state, -1, -2);
+	result = lua_rawequal(state, -1, -2);
 	
 	/* pop both metatables */
 	lua_pop(state, 2);
