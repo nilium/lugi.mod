@@ -22,8 +22,6 @@
 
 #include "lgcore.h"
 
-#include <stdio.h> /* needed for asprintf */
-
 
 #ifdef __cplusplus
 extern "C" {
