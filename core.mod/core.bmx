@@ -33,6 +33,7 @@ ModuleInfo "URL: <a href=~qhttp://github.com/nilium/lugi.mod/~q>http://github.co
 ?Threaded
 Import Brl.Threads
 ?
+Import Brl.Reflection
 Import Brl.LinkedList
 Import Pub.Lua
 Import "lgcore.cpp"
