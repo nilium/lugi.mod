@@ -842,9 +842,13 @@ static int lugi_index_object(lua_State *state) {
 					/** method **/
 				} else if (type ==  LUA_TFUNCTION) {
 					return 1;
+				} else {
+					lua_pop(state, 1);
 				}
-				
-			} /* table found */
+			} /* VMT found */
+			
+			/* pop previous VMT/nil */
+			lua_pop(state, 1);
 			
 			/* iterate to the superclass */
 			clas = clas->super;
@@ -879,7 +883,7 @@ static int lugi_newindex_object(lua_State *state) {
 		/* while class != NULL */
 		do {
 			/* get class VMT */
-			lua_pushlightuserdata(state, obj->clas);
+			lua_pushlightuserdata(state, clas);
 			lua_gettable(state, LUA_REGISTRYINDEX);
 		
 			if ( lua_type(state, -1) == LUA_TTABLE ) /* there's a lookup table for the class.. */
@@ -959,10 +963,12 @@ static int lugi_newindex_object(lua_State *state) {
 						break;
 					} /* set value based on type */
 					return 0;
-					
-				} /* field found */
-				
+				} else {
+					lua_pop(state, 1);
+				}
 			} /* VMT found */
+			
+			lua_pop(state, 1);
 			
 			clas = clas->super; /* iterate to a superclass if nothing is found in the class */
 			
