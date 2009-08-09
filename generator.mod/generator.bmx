@@ -97,7 +97,7 @@ Function GenerateGlueCode(url:Object = Null)
 	Next
 	
 	output.WriteLine("End Function")
-	output.WriteString("New LuGIInitFunction.PreInit("+LUGI_GLOBAL_PREFIX+LUGI_INIT_PREFIX+"pre_"+pretag+")~n~n~n")
+	output.WriteString("New LuGIInitFunction.PreInit("+LUGI_GLOBAL_PREFIX+LUGI_INIT_PREFIX+"pre_"+pretag+", False)~n~n~n")
 	
 	output.WriteLine("Function "+LUGI_GLOBAL_PREFIX+LUGI_INIT_PREFIX+"post_"+posttag+"(lua_vm:Byte Ptr, constructor:Int(state:Byte Ptr))")
 	

@@ -61,8 +61,9 @@ Const LUGI_BOOLFIELDOPT:Int = $8000
 Type LuGIInitFunction
 	
 	' Registers the callback provided as a pre-init stage routine
-	Method PreInit:LuGIInitFunction(cb(vm:Byte Ptr, rfield(off%, typ%, name$, clas@ Ptr), rmethod(fn:Int(state@ Ptr), name$, clas@ Ptr)))
+	Method PreInit:LuGIInitFunction(cb(vm:Byte Ptr, rfield(off%, typ%, name$, clas@ Ptr), rmethod(fn:Int(state@ Ptr), name$, clas@ Ptr)), requiresState%=True)
 		_cb = cb
+		_reqState = requiresState
 		?Threaded
 		p_lugi_initlock.Lock()
 		?
@@ -95,10 +96,16 @@ Type LuGIInitFunction
 	' #region PRIVATE
 	
 	Field _cb:Byte Ptr
+	Field _reqState:Int
 	
 	Method Pre(vm:Byte Ptr, rfield(off%, typ%, name$, clas@ Ptr), rmethod(fn:Int(state@ Ptr), name$, clas@ Ptr))
 		Local cb(vm:Byte Ptr, rfield(off%, typ%, name$, clas@ Ptr), rmethod(fn:Int(state@ Ptr), name$, clas@ Ptr)) = _cb
-		cb(vm, rfield, rmethod)
+		If Not _reqState Then
+		    p_lugi_preinit_cb.Remove(Self)
+		    cb(Null, rfield, rmethod) ' No VM is passed, since it's not required
+		Else
+    		cb(vm, rfield, rmethod)
+    	EndIf
 	End Method
 	
 	Method Post(vm:Byte Ptr, constructor:Int(state:Byte Ptr))
