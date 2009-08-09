@@ -90,23 +90,17 @@ typedef enum {
 /** Structure containing information pertaining to the glue code - like reflection for the blind **/
 typedef struct s_glueinfo glueinfo_t;
 
-#pragma pack(push)
-#pragma pack(1)
-
 typedef struct s_fieldinfo
 {
-	uint16_t type;
-	uint16_t offset;
+	fieldtype_e type;
+	ptrdiff_t offset;
 } fieldinfo_t;
-
-#pragma pack(pop)
 
 struct s_glueinfo {
 	infotype_e type;
 	union {
 		lua_CFunction fn;			/* glue method */
 		fieldinfo_t field;
-		uint32_t fieldint;
 	} data;
 	char *name;						/* method name */
 	BBClass *clas;					/* NULL if static */
@@ -224,7 +218,7 @@ void p_lugi_init(lua_State *state) {
 				break;
 				
 				case FIELDTYPE:
-				lua_pushinteger(state, info->data.fieldint);
+                (*(fieldinfo_t*)lua_newuserdata(state, sizeof(fieldinfo_t))) = info->data.field;
 				break;
 				
 				default:
@@ -340,8 +334,8 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas) 
 	
 	info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
 	info->type = FIELDTYPE;
-	info->data.field.offset = (unsigned short)offset;
-	info->data.field.type = (unsigned short)type;
+	info->data.field.offset = static_cast<ptrdiff_t>(offset);
+	info->data.field.type = static_cast<fieldtype_e>(type);
 	info->clas = clas;
 	info->name = cname;
 	info->next = lugi_g_infohead;
@@ -802,14 +796,13 @@ static int lugi_index_object(lua_State *state) {
 						
 				int type = lua_type(state, -1);
 			
-				if (type == LUA_TNUMBER) {		/* getting the value of a field */
-					int fieldopt = lua_tointeger(state, -1);
-					fieldinfo_t info = *(fieldinfo_t*)&fieldopt;
-					bmx_field *field = (bmx_field*)((char*)obj+info.offset);
+				if (type == LUA_TUSERDATA) {		/* getting the value of a field */
+					fieldinfo_t *info = (fieldinfo_t*)lua_touserdata(state, -1);
+					bmx_field *field = (bmx_field*)((char*)obj+info->offset);
 					
-					switch (info.type&(~BOOLFIELDOPT)) {
+					switch (info->type&(~BOOLFIELDOPT)) {
 						case BYTEFIELD:
-						if (info.type&BOOLFIELDOPT) {
+						if (info->type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->byte_value);
 						} else {
 							lua_pushinteger(state, field->byte_value);
@@ -817,7 +810,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						case SHORTFIELD:
-						if (info.type&BOOLFIELDOPT) {
+						if (info->type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->short_value);
 						} else {
 							lua_pushinteger(state, field->short_value);
@@ -825,7 +818,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						case INTFIELD:
-						if (info.type&BOOLFIELDOPT) {
+						if (info->type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->int_value);
 						} else {
 							lua_pushinteger(state, field->int_value);
@@ -841,7 +834,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						case LONGFIELD:
-						if (info.type&BOOLFIELDOPT) {
+						if (info->type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->long_value);
 						} else {
 							lua_pushinteger(state, field->long_value);
@@ -863,7 +856,7 @@ static int lugi_index_object(lua_State *state) {
 						break;
 				
 						default:
-						return luaL_error(state, ERRORSTR("@lugi_index_object: Unrecognized field type (%d)."), info.type);
+						return luaL_error(state, ERRORSTR("@lugi_index_object: Unrecognized field type (%d)."), info->type);
 						break;
 					}
 					return 1;
@@ -920,14 +913,13 @@ static int lugi_newindex_object(lua_State *state) {
 				lua_pushvalue(state, 2);
 				lua_rawget(state, -2);
 				
-				if (lua_type(state, -1) == LUA_TNUMBER) {		/* getting the value of a field */
-					int fieldopt = lua_tointeger(state, -1);
-					fieldinfo_t info = *(fieldinfo_t*)&fieldopt;
-					bmx_field *field = (bmx_field*)((char*)obj+info.offset);
+				if (lua_type(state, -1) == LUA_TUSERDATA) {		/* getting the value of a field */
+                    fieldinfo_t *info = (fieldinfo_t*)lua_touserdata(state, -1);;
+					bmx_field *field = (bmx_field*)((char*)obj+info->offset);
 					
 					clas = NULL;
 					
-					switch (info.type) /* set the value of a field */
+					switch (info->type) /* set the value of a field */
 					{
 						case BYTEFIELD:
 						if (lua_type(state, 3) == LUA_TBOOLEAN) {
@@ -988,7 +980,7 @@ static int lugi_newindex_object(lua_State *state) {
 						} break;
 					
 						default:
-						return luaL_error(state, ERRORSTR("@lugi_newindex_object: Unrecognized field type (%d)."), info.type);
+						return luaL_error(state, ERRORSTR("@lugi_newindex_object: Unrecognized field type (%d)."), info->type);
 						break;
 					} /* set value based on type */
 					return 0;
