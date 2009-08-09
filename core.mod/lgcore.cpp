@@ -289,11 +289,26 @@ void p_lugi_init(lua_State *state) {
   for the class
 */
 void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas) {
-	glueinfo_t *info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
+    glueinfo_t *info;
+    char *cname = bbStringToCString(name);
+	
+    info = lugi_g_infohead;
+    while (info != NULL) {
+        if ( info->type == METHODTYPE && info->clas == clas &&
+            strcmp(cname, info->name) == 0 && info->data.fn == fn ) {
+            // then
+            bbMemFree(cname);
+            return;
+        }
+        
+        info = info->next;
+    }
+    
+	info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
 	info->type = METHODTYPE;
 	info->data.fn = fn;
 	info->clas = clas;
-	info->name = bbStringToCString(name);
+	info->name = cname;
 	info->next = lugi_g_infohead;
 	lugi_g_infohead = info;
 }
@@ -306,13 +321,29 @@ void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas) {
 void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas) {
 	if ( clas == NULL )
 		bbExThrowCString(ERRORSTR("@lugi_register_field: Cannot pass Null BBClass for field."));
+    glueinfo_t *info;
+    char *cname = bbStringToCString(name);
 	
-	glueinfo_t *info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
+    info = lugi_g_infohead;
+    while (info != NULL) {
+        if ( info->type == FIELDTYPE && info->clas == clas &&
+            strcmp(cname, info->name) == 0 && info->data.field.offset == offset &&
+            info->data.field.type == type ) {
+            // then
+            bbMemFree(cname);
+            return;
+        }
+        
+        info = info->next;
+    }
+	
+	
+	info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
 	info->type = FIELDTYPE;
 	info->data.field.offset = (unsigned short)offset;
 	info->data.field.type = (unsigned short)type;
 	info->clas = clas;
-	info->name = bbStringToCString(name);
+	info->name = cname;
 	info->next = lugi_g_infohead;
 	lugi_g_infohead = info;
 }
