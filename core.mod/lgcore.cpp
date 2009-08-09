@@ -250,7 +250,7 @@ void p_lugi_init(lua_State *state) {
 		lua_pushcclosure(state, lugi_lt_object, 0); /* a <= b */
 		lua_setfield(state, -2, "__lt");
 		lua_pushcclosure(state, lugi_eq_object, 0); /* a == b */
-		lua_setfield(state, -2, "__lq");
+		lua_setfield(state, -2, "__eq");
 		/* index */
 		lua_pushcclosure(state, lugi_index_object, 0); /* a[b] */
 		lua_setfield(state, -2, "__index");
