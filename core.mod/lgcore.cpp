@@ -34,9 +34,7 @@ static int lugi_lt_object(lua_State *state);			/* lua: a < b */
 static int lugi_eq_object(lua_State *state);			/* lua: a == b */
 static int lugi_index_object(lua_State *state);			/* lua: object[key], object.key, object:key */
 static int lugi_newindex_object(lua_State *state);		/* lua: object[key] = value, object.key = value */
-#ifndef THREADED                                                
 static int lugi_gc_object(lua_State *state);			/* BBObject userdata collected by Lua */
-#endif
 
 
 
@@ -118,16 +116,6 @@ static glueinfo_t *lugi_g_infohead = NULL;
 /* as keys into the registry table */
 static void* const LUGI_METATABLE_KEY = (void* const)&LUGI_METATABLE_KEY;		/* key for the generic metatable */
 static void* const LUGI_OBJECT_CACHE_KEY = (void* const)&LUGI_OBJECT_CACHE_KEY;	/* key for the LuGI object cache */
-
-
-
-/*************************** Number of records for the object metatable ***************************/
-
-#ifdef THREADED
-#	define LUGI_METATABLE_NUM_RECORDS 5
-#else
-#	define LUGI_METATABLE_NUM_RECORDS 6
-#endif
 
 
 
@@ -243,7 +231,7 @@ void p_lugi_init(lua_State *state) {
 		/* create the metatable if it doesn't exist */
 		lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
 		
-		lua_createtable(state, 0, LUGI_METATABLE_NUM_RECORDS);
+		lua_createtable(state, 0, 6); // 6 metamethods for object instances..
 		
 		lua_pushcclosure(state, lugi_le_object, 0); /* a < b */
 		lua_setfield(state, -2, "__le");
@@ -258,11 +246,9 @@ void p_lugi_init(lua_State *state) {
 		lua_pushcclosure(state, lugi_newindex_object, 0); /* a[b] = c */
 		lua_setfield(state, -2, "__newindex");
 		
-	#ifndef THREADED
 		/* t.__gc */
 		lua_pushcclosure(state, lugi_gc_object, 0);
 		lua_setfield(state, -2, "__gc");
-	#endif
 		
 		lua_settable(state, LUA_REGISTRYINDEX);
 	}
@@ -393,21 +379,6 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 	lua_pushlightuserdata(state, obj);
 	lua_gettable(state, -2);
 	
-#ifdef THREADED
-	/* in the case of threaded builds, we use light userdata instead of regular userdata, since
-	   the garbage collection metatable is not necessary */
-	
-	/* if cache[object] == object */
-	if (lua_type(state, -1) == LUA_TLIGHTUSERDATA) {
-		lua_remove(state, -2);
-		/* object exists, remove table and return */
-		return;
-	}
-	
-	lua_pop(state, 1);
-	
-	lua_pushlightuserdata(state, obj);
-#else
 	/* if cache[object] == object */
 	if (lua_type(state, -1) == LUA_TUSERDATA) {
 		lua_remove(state, -2);
@@ -423,7 +394,6 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 	/* store object */
 	BBObject **data = (BBObject**)lua_newuserdata(state, sizeof(BBObject*));
 	*data = obj;
-#endif
 	
 #if BMX_TABLE_SUPPORT > 0
 	/*
@@ -479,15 +449,9 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 			return (BBObject*)lua_tobmaxarray(state, index);
 		
 		/* get an object out of the userdata */
-#ifdef THREADED
-		case LUA_TLIGHTUSERDATA:
-			if ( lua_isbmaxobject(state, index) != 0 )
-				return (BBObject*)lua_touserdata(state, index);
-#else
 		case LUA_TUSERDATA:
 			if ( lua_isbmaxobject(state, index) != 0 )
 				return *(BBObject**)lua_touserdata(state, index);
-#endif
 		
 		/* and the best default ever: an error */
 		default:
@@ -500,11 +464,7 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 int32_t lua_isbmaxobject(lua_State *state, int index) {
 	int result;
 	/* first check the type of the value to make sure it's correct */
-#ifdef THREADED
-	if ( lua_type(state, index) != LUA_TLIGHTUSERDATA )
-#else
 	if ( lua_type(state, index) != LUA_TUSERDATA )
-#endif
 		return 0;
 	
 	/* get the metatable for the value at the index */
@@ -703,11 +663,7 @@ BBArray *lua_tobmaxarray(lua_State *state, int index) {
 		}
 		
 		case LUA_TTABLE:		/* array of arrays (arrays inside of arrays do not have to be the same type) */
-#ifdef THREADED
-		case LUA_TLIGHTUSERDATA:		/* array of objects */
-#else
 		case LUA_TUSERDATA:
-#endif
 		{
 			BBObject **p;
 			
@@ -1012,15 +968,12 @@ static int lugi_newindex_object(lua_State *state) {
 
 
 /* Userdata collection routine - only used in unthreaded builds where refcount has to be decremented */
-/* This is only compiled if not threaded, of course */
-#ifndef THREADED
 static int lugi_gc_object(lua_State *state) {
 	BBObject **obj = (BBObject**)lua_touserdata(state,1);
 	BBRELEASE(*obj);
 	*obj = NULL;
 	return 0;
 }
-#endif
 
 
 
