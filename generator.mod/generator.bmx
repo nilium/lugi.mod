@@ -26,6 +26,7 @@ Module LuGI.Generator
 
 ModuleInfo "Name: LuGI Code Generator"
 ModuleInfo "Description: Default code generator for Lua glue code used by LuGI"
+ModuleInfo "Version: 0.8.01"
 ModuleInfo "Author: Noel Cower"
 ModuleInfo "License: MIT"
 ModuleInfo "URL: <a href=~qhttp://github.com/nilium/lugi.mod/~q>http://github.com/nilium/lugi.mod/</a>"

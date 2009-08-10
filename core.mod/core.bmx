@@ -26,7 +26,7 @@ Module LuGI.Core
 
 ModuleInfo "Name: LuGI Core"
 ModuleInfo "Description: Core API provided by LuGI to interact with BMax objects via Lua"
-ModuleInfo "Version: 0.8"
+ModuleInfo "Version: 0.8.01"
 ModuleInfo "Author: Noel Cower"
 ModuleInfo "License: MIT"
 ModuleInfo "URL: <a href=~qhttp://github.com/nilium/lugi.mod/~q>http://github.com/nilium/lugi.mod/</a>"
