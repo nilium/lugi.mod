@@ -732,6 +732,19 @@ static int lugi_eq_object(lua_State *state) {
 
 /* table[key]  OR  table.key */
 static int lugi_index_object(lua_State *state) {
+	
+#ifdef BMX_TABLE_SUPPORT > 1	
+	/* prior table behavior for BMax objects */
+	lua_getfenv(state, 1);
+	lua_pushvalue(state, 2);
+	lua_gettable(state, -2);
+	if ( lua_isnil(state, -1) == 0 ) {
+		return 1;
+	}
+	
+	lua_settop(state, 2);
+#endif
+	
 	if (lua_type(state, 2) == LUA_TSTRING) {
 		
 		BBObject *obj = lua_tobmaxobject(state, 1);
@@ -839,13 +852,7 @@ static int lugi_index_object(lua_State *state) {
 	/* notify that there was an error accessing a field or method that does not exist */
 	return luaL_error(state, ERRORSTR("@lugi_index_object: Index for object is not a valid field or method."));
 #else
-	lua_settop(state, 2);
-	
-	/* prior table behavior for BMax objects */
-	lua_getfenv(state, 1);
-	lua_insert(state, 2);
-	lua_gettable(state, 2); /* this is funky */
-	
+	lua_pushnil(state);
 	return 1;
 #endif
 } /* lugi_index_object */
