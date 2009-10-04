@@ -850,7 +850,14 @@ static int lugi_index_object(lua_State *state) {
 	
 #if BMX_TABLE_SUPPORT < 1
 	/* notify that there was an error accessing a field or method that does not exist */
-	return luaL_error(state, ERRORSTR("@lugi_index_object: Index for object is not a valid field or method."));
+	const char *objtype="invalid object";
+	if (lua_isbmaxobject(state, 1))
+		objtype = lua_tobmaxobject(state, 1)->clas->debug_scope->name;
+	
+	if ( (LUA_TNUMBER|LUA_TSTRING)&lua_type(state, 2) )
+		return luaL_error(state, ERRORSTR("@lugi_index_object: Index (%s) for object<%s> is not a valid field or method."), lua_tostring(state, 2), objtype);
+	else
+		return luaL_error(state, ERRORSTR("@lugi_index_object: Index for object<%s> is not a valid field or method."), objtype);
 #else
 	lua_pushnil(state);
 	return 1;
@@ -960,7 +967,14 @@ static int lugi_newindex_object(lua_State *state) {
 	} /* key is string */
 	
 #if BMX_TABLE_SUPPORT < 1
-	return luaL_error(state, ERRORSTR("@lugi_newindex_object: Index for object is not a valid field or method."));
+	const char *objtype="null";
+	if (lua_isbmaxobject(state, 1))
+		objtype = lua_tobmaxobject(state, 1)->clas->debug_scope->name;
+	
+	if ((LUA_TNUMBER|LUA_TSTRING)&lua_type(state,2))
+		return luaL_error(state, ERRORSTR("@lugi_newindex_object: Index (%s) for object<%s> is not a valid field or method."), lua_tostring(state, 2), objtype);
+	else
+		return luaL_error(state, ERRORSTR("@lugi_newindex_object: Index for object<%s> is not a valid field or method."), objtype);
 #else
 	/* prior table behavior for BMax objects - disabled by default */
 	lua_settop(state, 3);
