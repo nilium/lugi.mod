@@ -1211,16 +1211,7 @@ static int lugi_newindex_array(lua_State *state) {
 					return luaL_error(state, ERRORSTR("@lugi_newindex_array: Undefined array type encountered: %s"), arr->type);
 				}
 				
-				BBClass *valueclas = value->clas;
-				while ( valueclas != NULL ) {
-					if ( arrclas == valueclas )
-						break;
-					valueclas = valueclas->super;
-				}
-				
-				if ( valueclas == NULL ) {
-					return luaL_error(state, ERRORSTR("@lugi_newindex_array: Cannot assign object to array element of differing type"));
-				}
+				value = bbObjectDowncast(value, arrclas);
 				
 				BBObject **data = (BBObject**)BBARRAYDATA(arr, arr->dims);
 				BBRETAIN(value);
