@@ -188,3 +188,7 @@ Function InitLuGI(vm:Byte Ptr)
 	p_lugi_initlock.Unlock()
 	?
 End Function
+
+Function BindFunctionToType(fn:Int(L@Ptr), as$, typ:TTypeID)
+	p_lugi_register_method(fn, as, Byte Ptr(typ._class))
+End Function
