@@ -26,7 +26,7 @@ Module LuGI.Core
 
 ModuleInfo "Name: LuGI Core"
 ModuleInfo "Description: Core API provided by LuGI to interact with BMax objects via Lua"
-ModuleInfo "Version: 0.8.02"
+ModuleInfo "Version: 0.9b"
 ModuleInfo "Author: Noel Cower"
 ModuleInfo "License: MIT"
 ModuleInfo "URL: <a href=~qhttp://github.com/nilium/lugi.mod/~q>http://github.com/nilium/lugi.mod/</a>"
@@ -40,6 +40,12 @@ Import Pub.Lua
 Import "lgcore.cpp"
 
 Public
+
+' Version information
+Const LUGI_VERSION_0_8_2:Int = 00800200
+Const LUGI_VERSION_0_9_0B:Int = 00900002
+Const LUGI_VERSION_NUMBER:Int = 00900002 ' MMmmrrxx where xxx will be any arbitrary digits I assign.
+Const LUGI_VERSION:String = "0.9b"
 
 ' LuGI field types - used by LuGI to determine how to access fields at runtime
 ' The only reason these are public is because the generated code uses them, otherwise I'd hide
