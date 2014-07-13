@@ -25,7 +25,7 @@ License
 
 LuGI is currently licensed under the MIT license (same as Lua):
 
-    Copyright (c) 2010 Noel R. Cower
+    Copyright (c) 2009, 2014 Noel R. Cower
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
