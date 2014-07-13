@@ -20,7 +20,7 @@
 	THE SOFTWARE.
 */
 
-/* metadat.dox */
+/* metadata.dox */
 
 /** \page metadata Metadata
 	There is a good amount of different metadata tags you can give your types, methods, and fields to
