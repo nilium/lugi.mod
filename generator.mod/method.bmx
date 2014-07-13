@@ -44,36 +44,36 @@ Type LExposedMethod
 	Field hidden%
 	Field booltype%
 	Field tag$
-	
+
 	Method New()
 		tag = "_"+GenerateUniqueTag(6)
 	End Method
-	
+
 	' Initializes an exposed method - returns Null if the method is hidden/not exposed
 	Method InitWithMethod:LExposedMethod(meth:TMethod, owner:TTypeID)
 		methodid = meth
 		Self.owner = owner
-		
+
 		' get metadata
 		hidden = methodid.Metadata(LUGI_META_HIDDEN).ToInt()>0
-		
+
 		If hidden Then
 			Return Null
 		EndIf
-		
+
 		name = methodid.Metadata(LUGI_META_RENAME).Trim()
 		If Not name Then
 			name = methodid.Name()
 		EndIf
-		
+
 		Return Self
 	End Method
-	
+
 	Method PreInitBlock:String(fortype:TTypeID=Null)
 		If hidden Then
 			Return Null
 		EndIf
-		
+
 		If fortype Then
 			' Registers the method with LuGI's core
 			Return REGISTER_METHOD_NAME+"( " + ImplementationName() + ", ~q" + name + "~q, Byte Ptr(TTypeID.ForName(~q" + fortype.Name() + "~q)._class) )"
@@ -82,42 +82,42 @@ Type LExposedMethod
 			Return REGISTER_METHOD_NAME+"( " + ImplementationName() + ", ~q" + name + "~q, Null )"
 		EndIf
 	End Method
-	
+
 	Method PostInitBlock:String()
 		' noop - methods have no post-init block
 	End Method
-	
+
 	Method ImplementationName$()
 		' This should never actually be necessary, since hidden methods shouldn't even be
 		' created
 		If hidden Then
 			Return Null
 		EndIf
-		
+
 		Return LUGI_GLOBAL_PREFIX+LUGI_METH_PREFIX+owner.Name()+"_"+name+tag
 	End Method
-	
+
 	' Returns the implementation of the method
 	Method Implementation:String( instanceMethod:Int, objectName$=Null )
 		If hidden Then
 			Return Null
 		EndIf
-		
+
 		Local head$ = "Function "+ImplementationName()+":Int( lua_vm:Byte Ptr )"
-		
+
 		' Whether or not to add the NoDebug flag to method glue functions
 		If LUGI_METH_NODEBUG Then
 			head :+ " NoDebug"
 		EndIf
-		
+
 		head :+ "~n"
-		
+
 		' Tail is same for all methods: return 1 and end function
 		Local tail$ = "~nEnd Function~n"
-		
+
 		' output string always starts with the head
 		Local outs$ = head
-		
+
 		' Choose the implementation type depending on whether this is an instance method or
 		' a noclass method
 		If instanceMethod Then
@@ -126,7 +126,7 @@ Type LExposedMethod
 			' Pass the name of the global instance for the noclass method
 			outs :+ __noclassImp(objectName)
 		EndIf
-		
+
 		Local retType:TTypeID = methodid.TypeID()
 		Local pushfn$ = LuaPushFunctionForTypeID(retType)
 		' select the push function needed depending on whether or not the method is to return
@@ -137,61 +137,61 @@ Type LExposedMethod
 			Else
 				outs :+ "~t"+pushfn
 			EndIf
-		
+
 			' method parameters
 			outs :+ "( lua_vm, obj."+methodid.Name()+"("+(", ".Join(__argNames()))+") )~n~n~tReturn 1~n"
 		Else
 			' Method doesn't have a return type (or a supported return type), returns nothing
 			outs :+ "~tobj."+methodid.Name()+"("+(", ".Join(__argNames()))+")~n~n~tReturn 0~n"
 		EndIf
-		
+
 		outs :+ tail
-		
+
 		Return outs
 	End Method
-	
+
 	' Returns a formatted block of code for the arguments (with tabs/line-endings, as opposed to
 	' something like PreInitBlock which returns just the line)
 	' stackstart designates the first stack index of the argument
 	Method __argsBlock:String(stackstart%)
 		Const argLocalFormat$ = "Local \1:\2 = \3"
 		Const argGetterFormat$ = "\1 = \2"
-		
+
 		Local args:TTypeID[] = methodid.ArgTypes()
-		
+
 		' If there are no arguments, we have nothing to show
 		If args.Length = 0 Then
 			Return Null
 		EndIf
-		
+
 		Local argNames$[] = __argNames()
 		Local argGetters$[args.Length]
 		Local argLocals$[args.Length]
-		
+
 		For Local idx:Int = 0 Until args.Length
 			' generate the Local declaration
 			argLocals[idx] = FormatString(argLocalFormat, [argNames[idx], args[idx].Name(), DefaultValueForTypeID(args[idx])])
 			' and the getter - many '~t's follow
 			Select args[idx]
-				Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId
-					argGetters[idx] = ..
-						"Select lua_type(lua_vm, "+(stackstart+idx)+")" + ..
-							"~n~t~t~t~tCase LUA_TBOOLEAN~n" + ..
-								"~t~t~t~t~t" + argNames[idx] + " = " + LuaToFunctionForTypeID(args[idx], "lua_vm", stackstart+idx, True) + ..
-							"~n~t~t~t~tDefault~n" + ..		 ' attempt to convert whatever is on the stack to an integer
-								"~t~t~t~t~t" + argNames[idx] + " = " + LuaToFunctionForTypeID(args[idx], "lua_vm", stackstart+idx, False) + ..
-						"~n~t~t~tEnd Select"
-				
-				Default
-					argGetters[idx] = argNames[idx] + " = " + LuaToFunctionForTypeID(args[idx], "lua_vm", stackstart+idx, False)
-			End Select	
+			Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId
+				argGetters[idx] = ..
+					"Select lua_type(lua_vm, "+(stackstart+idx)+")" + ..
+						"~n~t~t~t~tCase LUA_TBOOLEAN~n" + ..
+							"~t~t~t~t~t" + argNames[idx] + " = " + LuaToFunctionForTypeID(args[idx], "lua_vm", stackstart+idx, True) + ..
+						"~n~t~t~t~tDefault~n" + ..		 ' attempt to convert whatever is on the stack to an integer
+							"~t~t~t~t~t" + argNames[idx] + " = " + LuaToFunctionForTypeID(args[idx], "lua_vm", stackstart+idx, False) + ..
+					"~n~t~t~tEnd Select"
+
+			Default
+				argGetters[idx] = argNames[idx] + " = " + LuaToFunctionForTypeID(args[idx], "lua_vm", stackstart+idx, False)
+			End Select
 		Next
-		
+
 		Local outs$ = "~t"+("~n~t".Join(argLocals))+"~n"
-		
+
 		If args.Length > 1 Then
 			' multiple arguments get a select/case block
-			
+
 			outs :+ "~t' Get arguments off stack~n"
 			outs :+ "~tSelect lua_gettop(lua_vm)~n"
 			If stackstart > 1 Then
@@ -216,10 +216,10 @@ Type LExposedMethod
 					"~t~t"+argGetters[0].Replace("~n~t", "~n") + ..
 				"~n~tEndIf~n"
 		EndIf
-		
+
 		Return outs
 	End Method
-	
+
 	Method __argNames$[]()
 		Local argNames:String[methodid.ArgTypes().Length]
 		For Local idx:Int = 0 Until argNames.Length
@@ -227,23 +227,23 @@ Type LExposedMethod
 		Next
 		Return argNames
 	End Method
-	
+
 	' Implementation for instances/static types
 	Method __instanceImp:String()
 		Local outs$
 		outs :+ "~tLocal obj:"+owner.Name()+" = "+LuaToFunctionForTypeID(owner, "lua_vm", 1, False)+"~n"
 		outs :+ __argsBlock(2)+"~n"
-		
+
 		Return outs
 	End Method
-	
+
 	' Implementation for types without classes (has an upvalue object associated with the closure)
 	Method __noclassImp:String(objname$)
 		Local outs$
-		
+
 		outs :+ "~tLocal obj:"+owner.Name()+" = "+objname+"~n"
 		outs :+ __argsBlock(1)+"~n"
-		
+
 		Return outs
 	End Method
 End Type

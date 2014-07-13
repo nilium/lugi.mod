@@ -38,10 +38,10 @@ extern "C" {
 
 /**
 	\brief Macro to enable table-like behavior for BMax objects in Lua.
-	
+
 	\note The code enabled by this macro is experimental and \em untested, it should be used with
 	extreme caution.
-	
+
 	When set to 1, LuGI will allow the indexing of BMax objects regardless of whether or not a key
 	is defined for the BMax type.  For example, given the type Account:
 	\code
@@ -50,12 +50,12 @@ extern "C" {
 		Field ID:Int
 	End Type
 	\endcode
-	
+
 	Setting the value of key \c Age in Lua will create a new key-value pair in the object's
 	environment table.
 	\code
 	local account = NewAccount()
-	
+
 	account.Age = 32 -- adds a key-value pair {"Age", 32} to the object's environment table
 	\endcode
 **/
@@ -70,7 +70,7 @@ extern "C" {
 /** \brief Field type enum
 
 	Used to identify the type of a BMax object's field from within Lua.
-	
+
 	\sa lugi_register_field()
 **/
 typedef enum {
@@ -83,7 +83,7 @@ typedef enum {
 	STRINGFIELD = 0x040,
 	OBJECTFIELD = 0x080,
 	ARRAYFIELD = 0x100,
-	
+
 	/** Optional flag to specify that an integer field should be returned as a Lua boolean. **/
 	BOOLFIELDOPT = 0x8000
 } fieldtype_e;
@@ -93,14 +93,14 @@ typedef enum {
 /*************************************** Initialization API ***************************************/
 
 /** \brief Initialize LuGI for use with the specified Lua state.
-	
+
 		Creates the generic BBObject metatable and metamethods, the object cache table, and the type
 		method tables.
-	
+
 	\precondition The Lua state must be created.
 	\postcondition The Lua state will be prepared to work with BlitzMax objects based on which
 		methods and fields are exposed via register_method and register_field.
-	
+
 	\author Noel Cower
 	\date 2009-06-28
 	\param state The Lua state to initialize the glue code in.
@@ -108,11 +108,11 @@ typedef enum {
 void p_lugi_init(lua_State *state);
 
 /** \brief Registers a method closure with the LuGI core.
-	
+
 		This method will add to LuGI's registry a method to be associated with a virtual method
 		table or alternatively a global function.  To register a global function, the BBClass passed
 		to p_lugi_register_method should be NULL.
-	
+
 	\author Noel Cower
 	\date 2009-07-16
 	\param fn A pointer to the function to create a closure for.
@@ -124,10 +124,10 @@ void p_lugi_init(lua_State *state);
 void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas);
 
 /** \brief Registers a field name and offset with the LuGI core.
-	
+
 		This method will add to LuGI's registry a field offset and name to be associated with
 		object's of a specific BBClass (and its subclasses).
-	
+
 	\author Noel Cower
 	\date 2009-07-16
 	\param offset The offset of the field in an instance of the type specified by the clas
@@ -145,12 +145,12 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas);
 /*********************************** Object handling/conversion ***********************************/
 
 /** \brief Pushes a BlitzMax object onto the top of the Lua stack.
-	
+
 		Valid types of objects are strings, any instance of a custom type subclassing Object, and
 		one-dimensional arrays of any type.
-		
+
 	\pre The state must have been initialized with lugi_init().
-	
+
 	\author Noel Cower
 	\date 2009-06-28
 	\param state The Lua state whose stack you want to push the Object onto.
@@ -160,15 +160,15 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas);
 void lua_pushbmaxobject(lua_State *state, BBObject *obj);
 
 /** \brief Gets a BMax object off of the Lua stack.
-	
+
 		Valid types of objects to get off of the stack are strings, tables (converted to arrays),
 		and any instance of a custom type subclassing Object.
-	
+
 	\pre The state must have been initialized with lugi_init().
 	\pre The index specified must be a valid Lua stack index.
 	\pre The value at the index specified on the stack must be a valid BlitzMax object, a string, a
 	table, or nil.
-	
+
 	\author Noel Cower
 	\date 2009-06-28
 	\param state The Lua state whose stack you want to retrieve the Object from.
@@ -180,13 +180,13 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj);
 BBObject *lua_tobmaxobject(lua_State *state, int index);
 
 /** \brief Returns whether or not the value at the index is a BlitzMax object.
-	
+
 	This currently works by checking the metatable of the object.  If the object has the generic
 	metatable for BlitzMax objects, then it is an object.
-	
+
 	\pre The state must have been initialized for use with LuGI.
 	\pre The index specified must be a valid Lua stack index.
-	
+
 	\author Noel Cower
 	\date 2009-07-20
 	\param state The Lua state whose stack you want to retrieve the Object from.
@@ -201,7 +201,7 @@ int32_t lua_isbmaxobject(lua_State *state, int index);
 /************************************ Array handling/conversion ***********************************/
 
 /** \brief Pushes a BlitzMax array onto the stack as a table.
-	
+
 	\author Noel Cower
 	\date 2009-06-28
 	\param state The Lua state whose stack you want to push the array onto.
@@ -212,11 +212,11 @@ int32_t lua_isbmaxobject(lua_State *state, int index);
 void lua_pushbmaxarray(lua_State* state, BBArray* arr);
 
 /** \brief Converts a Lua table to a BlitzMax array.
-	
+
 	\pre The state must have been initialized for use with LuGI.
 	\pre The index specified must be a valid Lua stack index.
 	\pre The value at the index specified on the stack must be a table.
-	
+
 	\author Noel Cower
 	\date 2009-06-28
 	\param state The Lua state whose stack you want to retrieve the array from.

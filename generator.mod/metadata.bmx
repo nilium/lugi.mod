@@ -30,14 +30,14 @@ Global LUGI_CATEGORIES_STRING:String = ""
 Public
 
 ' Prefixes
-Global LUGI_GLOBAL_PREFIX$="lugi_"	' Prefix applied before other prefixes (e.g., ${GLOBAL_PREFIX}${METH_PREFIX}${TYPENAME}_${METHODNAME})
-Global LUGI_METH_PREFIX$="glue_"		' Prefix applied to method implementations
+Global LUGI_GLOBAL_PREFIX$ = "lugi_"                  ' Prefix applied before other prefixes (e.g., ${GLOBAL_PREFIX}${METH_PREFIX}${TYPENAME}_${METHODNAME})
+Global LUGI_METH_PREFIX$ = "glue_"                    ' Prefix applied to method implementations
 Global LUGI_NOCLASS_VAR_PREFIX$ = "lugi_glob_"
-Global LUGI_INIT_PREFIX$="p_lugi_init"
+Global LUGI_INIT_PREFIX$ = "p_lugi_init"
 
 ' Options
-Global LUGI_METH_NODEBUG:Int = False	' Specifies whether or not to add the 'NoDebug' to methods
-Global LUGI_CATEGORIES:String = ""		' Specifies the categories to generate code for (each category separated by a comma).  Categories are case sensitive.
+Global LUGI_METH_NODEBUG:Int = False                  ' Specifies whether or not to add the 'NoDebug' to methods
+Global LUGI_CATEGORIES:String = ""                    ' Specifies the categories to generate code for (each category separated by a comma).  Categories are case sensitive.
 
 ''' On Metadata:
 ' Metadata specified may be different between modules.  The default options are what is encourages,
@@ -46,20 +46,20 @@ Global LUGI_CATEGORIES:String = ""		' Specifies the categories to generate code 
 ' false.  This can't be changed.
 
 ' Type only
-Global LUGI_META_EXPOSE$ = "expose"			' Sets a type to be exposed via LuGI
-Global LUGI_META_HIDEFIELDS$ = "hidefields"	' Sets all fields in the type to be hidden
-Global LUGI_META_NOCLASS$ = "noclass"		' Suggests to LuGI that the type's methods should not be associated with a class - requires META_STATIC
-Global LUGI_META_STATIC$ = "static"			' Suggests to LuGI that the type should be made static (one instance is created as a global variable)
-Global LUGI_META_CONSTRUCTOR$ = "constructor"' Sets the name of a type's constructor
-Global LUGI_META_DISABLECONSTRUCTOR$ = "disablenew"' Sets whether or not the type can be instanciated in Lua
-Global LUGI_META_CATEGORY$ = "category" ' Sets the category/section/namespace of the type (used to filter types when generating code)
+Global LUGI_META_EXPOSE$ = "expose"                   ' Sets a type to be exposed via LuGI
+Global LUGI_META_HIDEFIELDS$ = "hidefields"           ' Sets all fields in the type to be hidden
+Global LUGI_META_NOCLASS$ = "noclass"                 ' Suggests to LuGI that the type's methods should not be associated with a class - requires META_STATIC
+Global LUGI_META_STATIC$ = "static"                   ' Suggests to LuGI that the type should be made static (one instance is created as a global variable)
+Global LUGI_META_CONSTRUCTOR$ = "constructor"         ' Sets the name of a type's constructor
+Global LUGI_META_DISABLECONSTRUCTOR$ = "disablenew"   ' Sets whether or not the type can be instanciated in Lua
+Global LUGI_META_CATEGORY$ = "category"               ' Sets the category/section/namespace of the type (used to filter types when generating code)
 
 ' Types & Methods
-Global LUGI_META_RENAME$ = "rename"			' Renames a method or type
+Global LUGI_META_RENAME$ = "rename"                   ' Renames a method or type
 
 ' Fields & Methods
-Global LUGI_META_HIDDEN$ = "hidden"			' Sets whether a method or field is hidden
-Global LUGI_META_BOOL$ = "bool"				' Sets whether or not a method or field returns a boolean value (only applies for return types of Int, Short, Byte, and Long)
+Global LUGI_META_HIDDEN$ = "hidden"                   ' Sets whether a method or field is hidden
+Global LUGI_META_BOOL$ = "bool"                       ' Sets whether or not a method or field returns a boolean value (only applies for return types of Int, Short, Byte, and Long)
 
 ' Methods
-Global LUGI_META_BINDING$ = "binding"		' UNUSED - Specifies the type of binding for the method (late/immediate)
+Global LUGI_META_BINDING$ = "binding"                 ' UNUSED - Specifies the type of binding for the method (late/immediate)

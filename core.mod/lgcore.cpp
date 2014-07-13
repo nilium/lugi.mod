@@ -39,7 +39,7 @@ static int lugi_gc_object(lua_State *state);			/* BBObject userdata collected by
 static int lugi_concat_array(lua_State *state);			/* array..array */
 static int lugi_length_array(lua_State *state);			/* #array */
 static int lugi_index_array(lua_State *state);			/* lua: array[index] */
-static int lugi_newindex_array(lua_State *state);			/* lua: array[index] = value */
+static int lugi_newindex_array(lua_State *state);		/* lua: array[index] = value */
 
 
 
@@ -146,69 +146,69 @@ void p_lugi_init(lua_State *state) {
 	/* check for object cache */
 	lua_pushlightuserdata(state, LUGI_OBJECT_CACHE_KEY);
 	lua_gettable(state, LUA_REGISTRYINDEX);
-	
+
 	if ( lua_type(state, -1) != LUA_TTABLE ) {
 		/* create object cache if it doesn't exist */
 		lua_pushlightuserdata(state, LUGI_OBJECT_CACHE_KEY);
-	
+
 		lua_newtable(state);
-		
+
 		lua_createtable(state, 0, 1);		/* create metatable for object cache */
 		lua_pushliteral(state, "v");		/* references to values are weak so that as long as the object */
 							/* persists in Lua, the object can be accessed from this cache */
 		lua_setfield(state, -2, "__mode");
 		lua_setmetatable(state, -2);
-		
+
 		lua_settable(state, LUA_REGISTRYINDEX);
 	}
 	lua_pop(state, 1); /* pop result of checking for the cache */
-	
+
 	/* check for BBObject class VMT */
 	lua_pushlightuserdata(state, &bbObjectClass);
 	lua_gettable(state, LUA_REGISTRYINDEX);
-	
+
 	if ( lua_type(state, -1) != LUA_TTABLE ) {
 		/* create BBObject VMT */
 		lua_pushlightuserdata(state, &bbObjectClass);
-		
+
 		lua_createtable(state, 0, 3);
-		
+
 		lua_pushcclosure(state, lugi_sendmessage_object, 0);
 		lua_setfield(state, -2, "SendMessage");
-		
+
 		lua_pushcclosure(state, lugi_tostring_object, 0);
 		lua_setfield(state, -2, "ToString");
-		
+
 		lua_pushcclosure(state, lugi_compare_object, 0);
 		lua_setfield(state, -2, "Compare");
-		
+
 		lua_settable(state, LUA_REGISTRYINDEX);
 	}
 	lua_pop(state, 1); /* pop result of checking for the  objectVMT */
-	
+
 	/* check for BBArray class VMT */
 	lua_pushlightuserdata(state, &bbArrayClass);
 	lua_gettable(state, LUA_REGISTRYINDEX);
-	
+
 	if ( lua_type(state, -1) != LUA_TTABLE ) {
 		/* create BBArray VMT */
 		lua_pushlightuserdata(state, &bbArrayClass);
-		
+
 		lua_createtable(state, 0, 3);
-		
+
 		lua_pushcclosure(state, lugi_sort_array, 0);
 		lua_setfield(state, -2, "Sort");
-		
+
 		lua_pushcclosure(state, lugi_slice_array, 0);
 		lua_setfield(state, -2, "Slice");
-		
+
 		lua_pushcclosure(state, lugi_type_array, 0);
 		lua_setfield(state, -2, "Type");
-		
+
 		lua_settable(state, LUA_REGISTRYINDEX);
 	}
 	lua_pop(state, 1); /* pop result of checking for the array VMT */
-	
+
 	/* put closures in the VMTs for classes */
 	/* these do not check to see if the methods have already been registered, so they'll be overwritten at times */
 	glueinfo_t *info = lugi_g_infohead;
@@ -222,11 +222,11 @@ void p_lugi_init(lua_State *state) {
 			/* retrieve the virtual method table for class */
 			lua_pushlightuserdata(state, info->clas);
 			lua_gettable(state, LUA_REGISTRYINDEX);
-			
+
 			if ( lua_type(state, -1) != LUA_TTABLE ) {
 				/* if the VMT doesn't exist, create it */
 				lua_pop(state, 1);
-				
+
 				lua_newtable(state);
 				lua_pushlightuserdata(state, info->clas);
 				/* push another reference to the new table to the top */
@@ -234,40 +234,40 @@ void p_lugi_init(lua_State *state) {
 				/* afterward, a reference to the table remains after inserting it into the registry */
 				lua_settable(state, LUA_REGISTRYINDEX);
 			}
-			
+
 			switch(info->type) {
 				case METHODTYPE:
 				lua_pushcclosure(state, info->data.fn, 0);
 				break;
-				
+
 				case FIELDTYPE:
                 (*(fieldinfo_t*)lua_newuserdata(state, sizeof(fieldinfo_t))) = info->data.field;
 				break;
-				
+
 				default:
 				luaL_error(state, ERRORSTR("@p_lugi_init: Unrecognized glue info type"));
 				return;
 				break;
 			}
-			
+
 			lua_setfield(state, -2, info->name); /* insert the closure into the class table */
 			lua_pop(state, 1); /* pop the class table */
 		}
-		
+
 		info = info->next;
 	}
-	
-	
+
+
 	/* check to see if the generic object metatable exists */
 	lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
 	lua_gettable(state, LUA_REGISTRYINDEX);
-	
+
 	if ( lua_type(state, -1) != LUA_TTABLE ) {
 		/* create the metatable if it doesn't exist */
 		lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
-		
+
 		lua_createtable(state, 0, 6); /* 6 metamethods for object instances.. */
-		
+
 		/* comparison */
 		lua_pushcclosure(state, lugi_le_object, 0); /* a < b */
 		lua_setfield(state, -2, "__le");
@@ -281,24 +281,24 @@ void p_lugi_init(lua_State *state) {
 		/* newindex */
 		lua_pushcclosure(state, lugi_newindex_object, 0); /* a[b] = c */
 		lua_setfield(state, -2, "__newindex");
-		
+
 		/* t.__gc */
 		lua_pushcclosure(state, lugi_gc_object, 0);
 		lua_setfield(state, -2, "__gc");
-		
+
 		lua_settable(state, LUA_REGISTRYINDEX);
 	}
 	lua_pop(state, 1); /* remove the result of checking for the metatable */
-	
+
 	/* check to see if the array object metatable exists */
 	lua_pushlightuserdata(state, LUGI_METATABLE_ARRAY_KEY);
-	
+
 	if ( lua_type(state, -1) != LUA_TTABLE ) {
 		/* create the metatable if it doesn't exist */
 		lua_pushlightuserdata(state, LUGI_METATABLE_ARRAY_KEY);
-		
+
 		lua_createtable(state, 0, 8); /* 8 metamethods for array instances. */
-		
+
 		/* comparison */
 		lua_pushcclosure(state, lugi_le_object, 0); /* a < b */
 		lua_setfield(state, -2, "__le");
@@ -312,19 +312,19 @@ void p_lugi_init(lua_State *state) {
 		/* newindex */
 		lua_pushcclosure(state, lugi_newindex_array, 0); /* a[b] = c */
 		lua_setfield(state, -2, "__newindex");
-		
+
 		/* length */
 		lua_pushcclosure(state, lugi_length_array, 0);
 		lua_setfield(state, -2, "__len");
-		
+
 		/* concat */
 		lua_pushcclosure(state, lugi_concat_array, 0);
 		lua_setfield(state, -2, "__concat");
-		
+
 		/* t.__gc */
 		lua_pushcclosure(state, lugi_gc_object, 0);
 		lua_setfield(state, -2, "__gc");
-		
+
 		lua_settable(state, LUA_REGISTRYINDEX);
 	}
 	lua_pop(state, 1);
@@ -346,7 +346,7 @@ void p_lugi_init(lua_State *state) {
 void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas) {
     glueinfo_t *info;
     char *cname = bbStringToCString(name);
-	
+
     info = lugi_g_infohead;
     while (info != NULL) {
         if ( info->type == METHODTYPE && info->clas == clas &&
@@ -355,10 +355,10 @@ void p_lugi_register_method(lua_CFunction fn, BBString *name, BBClass *clas) {
             bbMemFree(cname);
             return;
         }
-        
+
         info = info->next;
     }
-    
+
 	info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
 	info->type = METHODTYPE;
 	info->data.fn = fn;
@@ -378,7 +378,7 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas) 
 		bbExThrowCString(ERRORSTR("@lugi_register_field: Cannot pass Null BBClass for field."));
     glueinfo_t *info;
     char *cname = bbStringToCString(name);
-	
+
     info = lugi_g_infohead;
     while (info != NULL) {
         if ( info->type == FIELDTYPE && info->clas == clas &&
@@ -388,11 +388,11 @@ void p_lugi_register_field(int offset, int type, BBString *name, BBClass *clas) 
             bbMemFree(cname);
             return;
         }
-        
+
         info = info->next;
     }
-	
-	
+
+
 	info = (glueinfo_t*)bbMemAlloc(sizeof(glueinfo_t));
 	info->type = FIELDTYPE;
 	info->data.field.offset = static_cast<ptrdiff_t>(offset);
@@ -423,7 +423,7 @@ void lugi_free_info() {
 /* precondition: lua interface must be initialized for this state, or you will experience a crash. */
 void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 	int top = lua_gettop(state);
-	
+
 	if (obj == &bbNullObject || (BBArray*)obj == &bbEmptyArray) {
 		lua_pushnil(state);
 		return;
@@ -432,7 +432,7 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 		lua_pushlstring(state, "", 0);
 		return;
 	}
-	
+
 	if (obj->clas == &bbStringClass) {
 		BBString *str = (BBString*)obj;
 		char *buf = bbStringToCString(str);
@@ -440,31 +440,31 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 		bbMemFree(buf);
 		return;
 	}
-	
+
 	/* check object cache for existing object */
 	lua_pushlightuserdata(state, LUGI_OBJECT_CACHE_KEY);
 	lua_gettable(state, LUA_REGISTRYINDEX);
-	
+
 	/* cache[object] */
 	lua_pushlightuserdata(state, obj);
 	lua_gettable(state, -2);
-	
+
 	/* if cache[object] == object */
 	if (lua_type(state, -1) == LUA_TUSERDATA) {
 		lua_remove(state, -2);
 		/* object exists, remove table and return */
 		return;
 	}
-	
+
 	lua_pop(state, 1);
-	
+
 	/* increment reference count for the object since BMax's default GC relies on ref counting */
 	BBRETAIN(obj);
-	
+
 	/* store object */
 	BBObject **data = (BBObject**)lua_newuserdata(state, sizeof(BBObject*));
 	*data = obj;
-	
+
 #if BMX_TABLE_SUPPORT > 0
 	/*
 	  this is part of an unsupported feature to enable table-like behavior for BMax objects
@@ -480,22 +480,22 @@ void lua_pushbmaxobject(lua_State *state, BBObject *obj) {
 		return;
 	}
 #endif
-	
+
 	/* set the metatable */
 	if ( obj->clas == &bbArrayClass )
 		lua_pushlightuserdata(state, LUGI_METATABLE_ARRAY_KEY);
 	else
 		lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
-	
+
 	lua_gettable(state, LUA_REGISTRYINDEX);
 	lua_setmetatable(state, -2);
-	
+
 	/* cache the object and remove the cache table */
 	lua_pushlightuserdata(state, obj);
 	lua_pushvalue(state, -2);
 	lua_settable(state, -4);
 	lua_remove(state, -2);
-	
+
 	/* done */
 }
 
@@ -508,25 +508,25 @@ BBObject *lua_tobmaxobject(lua_State *state, int index) {
 		case LUA_TNONE:
 			luaL_error(state, ERRORSTR("@lua_tobmaxobject: Invalid index (%d)"), index);
 			return &bbNullObject;
-		
+
 		case LUA_TNIL:				/* return null for nil */
 			return &bbNullObject;
-		
+
 		case LUA_TSTRING:			/* if it's a string, return a string (since a BBString is an object) */
 		{
 			size_t length;
 			const char *sbuf = lua_tolstring(state, -1, &length);
 			return (BBObject*)bbStringFromBytes(sbuf, length);
 		}
-		
+
 		case LUA_TTABLE: /* pass off to lua_tobmaxarray */
 			return (BBObject*)lua_tobmaxarray(state, index);
-		
+
 		/* get an object out of the userdata */
 		case LUA_TUSERDATA:
 			if ( lua_isbmaxobject(state, index) != 0 )
 				return *(BBObject**)lua_touserdata(state, index);
-		
+
 		/* and the best default ever: an error */
 		default:
 			luaL_error(state, ERRORSTR("@lua_tobmaxobject: Value at index (%d) is not an object."), index);
@@ -540,28 +540,28 @@ int32_t lua_isbmaxobject(lua_State *state, int index) {
 	/* first check the type of the value to make sure it's correct */
 	if ( lua_type(state, index) != LUA_TUSERDATA )
 		return 0;
-	
+
 	/* get the metatable for the value at the index */
 	lua_getmetatable(state, index);
-	
+
 	/* get the generic metatable */
 	lua_pushlightuserdata(state, LUGI_METATABLE_KEY);
 	lua_gettable(state, LUA_REGISTRYINDEX);
-	
+
 	/* compare the two */
 	result = lua_rawequal(state, -1, -2);
-	
+
 	if ( result == 0 ) {	/* check if it has the array metatable */
 		lua_pop(state, 1);
 		lua_pushlightuserdata(state, LUGI_METATABLE_ARRAY_KEY);
 		lua_gettable(state, LUA_REGISTRYINDEX);
-		
+
 		result = lua_rawequal(state, -1, -2);
 	}
-	
+
 	/* pop both metatables */
 	lua_pop(state, 2);
-	
+
 	return result;
 }
 
@@ -581,10 +581,10 @@ BBArray *lua_tobmaxarray(lua_State *state, int index) {
 		case LUA_TNONE:
 			luaL_error(state, ERRORSTR("@lua_tobmaxarray: Invalid index (%d)"), index);
 			return &bbEmptyArray;
-		
+
 		case LUA_TNIL:
 			return &bbEmptyArray;
-		
+
 		case LUA_TUSERDATA:
 			if ( lua_isbmaxobject(state, index) ) {
 				BBObject *obj = lua_tobmaxobject(state, index);
@@ -596,133 +596,133 @@ BBArray *lua_tobmaxarray(lua_State *state, int index) {
 					return &bbEmptyArray;
 				}
 			}
-		
+
 		case LUA_TTABLE: /* code below */
 		break;
-		
+
 		default:
 			if (lua_type(state, index) != LUA_TTABLE) {
 				luaL_error(state, ERRORSTR("@lua_tobmaxarray: Value at index (%d) is not a table."), index);
 				return &bbEmptyArray;
 			}
 	}
-	
+
 	/* make the index absolute, since we're now dealing with more than one value on the stack */
 	if (index < 0 && index > LUA_REGISTRYINDEX)
 		index = lua_gettop(state)+(index+1);
-	
+
 	/* the index into the array */
 	size_t table_index;
 	BBArray *arr = NULL;
 	size_t len = lua_objlen(state, index);
-	
+
 	if ( len == 0 )
 		return &bbEmptyArray;
-	
+
 	/* get the first item of the table */
 	lua_pushinteger(state, 1);
 	lua_gettable(state, index);
-	
+
 	/* starting at index 2 when iterating */
 	table_index = 2;
-	
+
 	/* determine what type of array to create based on the first value in the table (at index 0) */
 	switch (lua_type(state, -1)) {
 		case LUA_TNUMBER: {		/* array of doubles */
 			double *p;
-			
+
 			arr = bbArrayNew1D("d", len);
 			p = (double*)BBARRAYDATA(arr, arr->dims);
-			
+
 			*p++ = lua_tonumber(state, -1);
 			lua_pop(state, 1);
-			
+
 			for (; table_index <= len; ++table_index) {
 				lua_pushinteger(state, table_index);
 				lua_gettable(state, index);
-				
+
 				*p++ = lua_tonumber(state, -1);
-				
+
 				lua_pop(state, 1);
 			}
-			
+
 			return arr;
 		}
-		
+
 		case LUA_TBOOLEAN: {		/* array of integers */
 			int *p;
-			
+
 			arr = bbArrayNew1D("i", len);
 			p = (int*)BBARRAYDATA(arr, arr->dims);
-			
+
 			*p++ = lua_toboolean(state, -1);
 			lua_pop(state, 1);
-			
+
 			for (; table_index <= len; ++table_index) {
 				lua_pushinteger(state, table_index);
 				lua_gettable(state, index);
-				
+
 				*p++ = lua_toboolean(state, -1);
-				
+
 				lua_pop(state, 1);
 			}
-			
+
 			return arr;
 		}
-		
+
 		case LUA_TSTRING: {		/* array of strings */
 			BBString **p;
-			
+
 			arr = bbArrayNew1D("$", len);
 			p = (BBString**)BBARRAYDATA(arr, arr->dims);
-			
+
 			*p = bbStringFromCString(lua_tostring(state, -1));
 			BBRETAIN((BBObject*)*p++);
 			lua_pop(state, 1);
-			
+
 			for (; table_index <= len; ++table_index) {
 				lua_pushinteger(state, table_index);
 				lua_gettable(state, index);
-				
+
 				*p = bbStringFromCString(lua_tostring(state, -1));
 				BBRETAIN((BBObject*)*p++);
-				
+
 				lua_pop(state, 1);
 			}
-			
+
 			return arr;
 		}
-		
+
 		case LUA_TTABLE:		/* array of arrays (arrays inside of arrays do not have to be the same type) */
 		case LUA_TUSERDATA:
 		{
 			BBObject **p;
-			
+
 			arr = bbArrayNew1D(":Object", len);
 			p = (BBObject**)BBARRAYDATA(arr, arr->dims);
-			
+
 			*p = lua_tobmaxobject(state, -1);
 			BBRETAIN(*p++);
 			lua_pop(state, 1);
-			
+
 			for (; table_index <= len; ++table_index) {
 				lua_pushinteger(state, table_index);
 				lua_gettable(state, index);
-				
+
 				*p = lua_tobmaxobject(state, -1);
 				BBRETAIN(*p++);
-				
+
 				lua_pop(state, 1);
 			}
-			
+
 			return arr;
 		}
-		
+
 		default:
 			luaL_error(state, ERRORSTR("@lua_tobmaxarray: Arrays of type %s are not unsupported"), lua_typename(state, lua_type(state, -1)));
 			return &bbEmptyArray;
 	} /* switch lua type */
-	
+
 	return arr;
 } /* lua_tobmaxarray */
 
@@ -761,8 +761,8 @@ static int lugi_eq_object(lua_State *state) {
 
 /* table[key]  OR  table.key */
 static int lugi_index_object(lua_State *state) {
-	
-#ifdef BMX_TABLE_SUPPORT > 1	
+
+#ifdef BMX_TABLE_SUPPORT > 1
 	/* prior table behavior for BMax objects */
 	lua_getfenv(state, 1);
 	lua_pushvalue(state, 2);
@@ -770,34 +770,34 @@ static int lugi_index_object(lua_State *state) {
 	if ( lua_isnil(state, -1) == 0 ) {
 		return 1;
 	}
-	
+
 	lua_settop(state, 2);
 #endif
-	
+
 	if (lua_type(state, 2) == LUA_TSTRING) {
-		
+
 		BBObject *obj = lua_tobmaxobject(state, 1);
 		BBClass *clas = obj->clas;
-		
+
 		/* while class */
 		do {
-		
+
 			/* get class VMT */
 			lua_pushlightuserdata(state, clas);
 			lua_gettable(state, LUA_REGISTRYINDEX);
-		
+
 			if ( lua_type(state, -1) == LUA_TTABLE ) /* there's a lookup table for the class.. */
 			{
-			
+
 				lua_pushvalue(state, 2);
 				lua_rawget(state, -2);
-						
+
 				int type = lua_type(state, -1);
-			
+
 				if (type == LUA_TUSERDATA) {		/* getting the value of a field */
 					fieldinfo_t *info = (fieldinfo_t*)lua_touserdata(state, -1);
 					bmx_field *field = (bmx_field*)((char*)obj+info->offset);
-					
+
 					switch (info->type&(~BOOLFIELDOPT)) {
 						case BYTEFIELD:
 						if (info->type&BOOLFIELDOPT) {
@@ -807,7 +807,7 @@ static int lugi_index_object(lua_State *state) {
 							lua_pushinteger(state, field->byte_value);
 						}
 						break;
-				
+
 						case SHORTFIELD:
 						if (info->type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->short_value);
@@ -816,7 +816,7 @@ static int lugi_index_object(lua_State *state) {
 							lua_pushinteger(state, field->short_value);
 						}
 						break;
-				
+
 						case INTFIELD:
 						if (info->type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->int_value);
@@ -825,15 +825,15 @@ static int lugi_index_object(lua_State *state) {
 							lua_pushinteger(state, field->int_value);
 						}
 						break;
-				
+
 						case FLOATFIELD:
 						lua_pushnumber(state, field->float_value);
 						break;
-				
+
 						case DOUBLEFIELD:
 						lua_pushnumber(state, field->double_value);
 						break;
-				
+
 						case LONGFIELD:
 						if (info->type&BOOLFIELDOPT) {
 							lua_pushboolean(state, field->long_value);
@@ -842,27 +842,27 @@ static int lugi_index_object(lua_State *state) {
 							lua_pushinteger(state, field->long_value);
 						}
 						break;
-				
+
 						case STRINGFIELD: {
 							char *strbuf = bbStringToCString(field->string_value);
 							lua_pushlstring(state, strbuf, field->string_value->length);
 							bbMemFree(strbuf);
 						} break;
-				
+
 						case ARRAYFIELD:
 						lua_pushbmaxarray(state, field->arr_value);
 						break;
-				
+
 						case OBJECTFIELD:
 						lua_pushbmaxobject(state, field->obj_value);
 						break;
-				
+
 						default:
 						return luaL_error(state, ERRORSTR("@lugi_index_object: Unrecognized field type (%d)."), info->type);
 						break;
 					}
 					return 1;
-					
+
 					/** method **/
 				}
 				else if (type ==  LUA_TFUNCTION) {
@@ -872,23 +872,23 @@ static int lugi_index_object(lua_State *state) {
 					lua_pop(state, 1);
 				}
 			} /* VMT found */
-			
+
 			/* pop previous VMT/nil */
 			lua_pop(state, 1);
-			
+
 			/* iterate to the superclass */
 			clas = clas->super;
-			
+
 		} while (clas != NULL);
-		
+
 	} /* key is string */
-	
+
 #if BMX_TABLE_SUPPORT < 1
 	/* notify that there was an error accessing a field or method that does not exist */
 	const char *objtype="invalid object";
 	if (lua_isbmaxobject(state, 1))
 		objtype = lua_tobmaxobject(state, 1)->clas->debug_scope->name;
-	
+
 	if ( (LUA_TNUMBER|LUA_TSTRING)&lua_type(state, 2) )
 		return luaL_error(state, ERRORSTR("@lugi_index_object: Index (%s) for object<%s> is not a valid field or method."), lua_tostring(state, 2), objtype);
 	else
@@ -903,27 +903,27 @@ static int lugi_index_object(lua_State *state) {
 /* table[key] = value OR table.key = value */
 static int lugi_newindex_object(lua_State *state) {
 	if (lua_type(state, 2) == LUA_TSTRING) {
-		
+
 		BBObject *obj = lua_tobmaxobject(state, 1);
 		BBClass *clas = obj->clas;
-		
+
 		/* while class != NULL */
 		do {
 			/* get class VMT */
 			lua_pushlightuserdata(state, clas);
 			lua_gettable(state, LUA_REGISTRYINDEX);
-			
+
 			if ( lua_type(state, -1) == LUA_TTABLE ) /* there's a lookup table for the class.. */
 			{
 				lua_pushvalue(state, 2);
 				lua_rawget(state, -2);
-				
+
 				if (lua_type(state, -1) == LUA_TUSERDATA) {		/* getting the value of a field */
                     fieldinfo_t *info = (fieldinfo_t*)lua_touserdata(state, -1);;
 					bmx_field *field = (bmx_field*)((char*)obj+info->offset);
-					
+
 					clas = NULL;
-					
+
 					switch (info->type) /* set the value of a field */
 					{
 						case BYTEFIELD:
@@ -934,7 +934,7 @@ static int lugi_newindex_object(lua_State *state) {
 							field->byte_value = (unsigned char)lua_tointeger(state, 3);
 						}
 						break;
-					
+
 						case SHORTFIELD:
 						if (lua_type(state, 3) == LUA_TBOOLEAN) {
 							field->short_value = (unsigned short)lua_toboolean(state, 3);
@@ -943,7 +943,7 @@ static int lugi_newindex_object(lua_State *state) {
 							field->short_value = (unsigned short)lua_tointeger(state, 3);
 						}
 						break;
-					
+
 						case INTFIELD:
 						if (lua_type(state, 3) == LUA_TBOOLEAN) {
 							field->int_value = lua_toboolean(state, 3);
@@ -952,15 +952,15 @@ static int lugi_newindex_object(lua_State *state) {
 							field->int_value = lua_tointeger(state, 3);
 						}
 						break;
-					
+
 						case FLOATFIELD:
 						field->float_value = (float)lua_tonumber(state, 3);
 						break;
-					
+
 						case DOUBLEFIELD:
 						field->double_value = lua_tonumber(state, 3);
 						break;
-					
+
 						case LONGFIELD:
 						if (lua_type(state, 3) == LUA_TBOOLEAN) {
 							field->long_value = lua_toboolean(state, 3);
@@ -968,26 +968,26 @@ static int lugi_newindex_object(lua_State *state) {
 						else {
 							field->long_value = lua_tointeger(state, 3);
 						} break;
-					
+
 						case STRINGFIELD: {
 							const char *strbuf = lua_tostring(state, 3);
 							BBString *last = field->string_value;
 							BBRETAIN((BBObject*)(field->string_value = bbStringFromCString(strbuf)));
 							BBRELEASE((BBObject*)last);
 						} break;
-					
+
 						case ARRAYFIELD: {
 							BBArray *last = field->arr_value;
 							BBRETAIN((BBObject*)(field->arr_value = lua_tobmaxarray(state, 3)));
 							BBRELEASE((BBObject*)last);
 						} break;
-					
+
 						case OBJECTFIELD: {
 						BBObject *last = field->obj_value;
 						BBRETAIN(field->obj_value = lua_tobmaxobject(state, 3));
 						BBRELEASE(last);
 						} break;
-					
+
 						default:
 						return luaL_error(state, ERRORSTR("@lugi_newindex_object: Unrecognized field type (%d)."), info->type);
 						break;
@@ -998,19 +998,19 @@ static int lugi_newindex_object(lua_State *state) {
 					lua_pop(state, 1);
 				}
 			} /* VMT found */
-			
+
 			lua_pop(state, 1);
-			
+
 			clas = clas->super; /* iterate to a superclass if nothing is found in the class */
-			
+
 		} while (clas != NULL);
 	} /* key is string */
-	
+
 #if BMX_TABLE_SUPPORT < 1
 	const char *objtype="null";
 	if (lua_isbmaxobject(state, 1))
 		objtype = lua_tobmaxobject(state, 1)->clas->debug_scope->name;
-	
+
 	if ((LUA_TNUMBER|LUA_TSTRING)&lua_type(state,2))
 		return luaL_error(state, ERRORSTR("@lugi_newindex_object: Index (%s) for object<%s> is not a valid field or method."), lua_tostring(state, 2), objtype);
 	else
@@ -1018,11 +1018,11 @@ static int lugi_newindex_object(lua_State *state) {
 #else
 	/* prior table behavior for BMax objects - disabled by default */
 	lua_settop(state, 3);
-	
+
 	lua_getfenv(state, 1);
 	lua_insert(state, 2);
 	lua_settable(state, 2);
-	
+
 	return 0;
 #endif
 }
@@ -1056,7 +1056,7 @@ static int lugi_index_array(lua_State *state) {
 		if ( index < 0 || arr->scales[0] <= index ) {
 			return luaL_error(state, ERRORSTR("@lugi_index_array: Attempt to index array failed: index (%d) out of bounds"), index);
 		}
-		
+
 		#define LGINDEXARRAY(LUA_PUSHX, TYPE) ((LUA_PUSHX)(state, ((TYPE*)BBARRAYDATA(arr, arr->dims))[index]))
 
 		switch (arr->type[0]) {
@@ -1089,19 +1089,19 @@ static int lugi_index_array(lua_State *state) {
 			case '[':
 			LGINDEXARRAY(lua_pushbmaxobject, BBObject*);
 			break;
-			
+
 			default:
 			return luaL_error(state, ERRORSTR("@lugi_index_array: Unsupported array element type: %s"), arr->type);
 		}
-		
+
 		#undef LGINDEXARRAY
-		
+
 		return 1;
 	} /* key is a valid type of index for an array */
 	else if ( lua_isstring(state, 2) ) {
 		return lugi_index_object(state); // pass off the event to the object metamethod so it can check for fields/methods
 	}
-	
+
 	return luaL_error(state, ERRORSTR("@lugi_index_array: Invalid type for an array index (%s), must be an integer or a string convertible to an integer"), lua_typename(state, lua_type(state, 2)));
 }
 
@@ -1109,7 +1109,7 @@ static int lugi_index_array(lua_State *state) {
 static int lugi_newindex_array(lua_State *state) {
 	if (lua_isnumber(state, 2) == 1) {
 		BBArray *arr = lua_tobmaxarray(state, 1);
-		
+
 		lua_Integer index = lua_tointeger(state, 2);
 		if ( index < 0 || arr->scales[0] <= index ) {
 			return luaL_error(state, ERRORSTR("@lugi_newindex_array: Attempt to index array failed: index (%d) out of bounds"), index);
@@ -1187,18 +1187,18 @@ static int lugi_newindex_array(lua_State *state) {
 					return luaL_error(state, ERRORSTR("@lugi_newindex_array: Cannot assign value with type %s to element of string array"), lua_typename(state, lua_type(state, 3)));
 				}
 			} break;
-			
+
 			case ':':	/* any type of object */
 			{
 				BBObject *value = lua_tobmaxobject(state, 3);
 				BBClass *arrclas = NULL;
-				
+
 				{	/* search for the array element type's class */
 					const char *arrtypename = arr->type+1;
 					int numTypes = 0;
 					int regidx = 0;
 					BBClass **regtypes = bbObjectRegisteredTypes(&numTypes);
-					
+
 					for (; regidx < numTypes; ++regidx) {
 						if ( strcmp(regtypes[regidx]->debug_scope->name, arrtypename) == 0 ) {
 							arrclas = regtypes[regidx];
@@ -1206,25 +1206,25 @@ static int lugi_newindex_array(lua_State *state) {
 						}
 					}
 				}
-				
+
 				if ( arrclas == NULL ) {
 					return luaL_error(state, ERRORSTR("@lugi_newindex_array: Undefined array type encountered: %s"), arr->type);
 				}
-				
+
 				value = bbObjectDowncast(value, arrclas);
-				
+
 				BBObject **data = (BBObject**)BBARRAYDATA(arr, arr->dims);
 				BBRETAIN(value);
 				BBRELEASE(data[index]);
 				data[index] = value;
 			} break;
-			
+
 			case '[': {
 				BBArray *value = lua_tobmaxarray(state, 3);
 				if ( (BBObject*)value == &bbNullObject ) {
 					value = &bbEmptyArray;
 				}
-				
+
 				if ( value == &bbEmptyArray || strcmp(arr->type+2, value->type) == 0 ) {
 					BBArray **data = (BBArray**)BBARRAYDATA(arr, arr->dims);
 					BBRETAIN((BBObject*)value);
@@ -1235,14 +1235,14 @@ static int lugi_newindex_array(lua_State *state) {
 					return luaL_error(state, ERRORSTR("@lugi_newindex_array: Cannot assign array value to an element of an array of a differing type"));
 				}
 			} break;
-			
+
 			default:
 			return luaL_error(state, ERRORSTR("@lugi_newindex_array: Unsupported array element type: %s"), arr->type);
 		}
-		
+
 		return 0;
 	} /* key is a valid type of index for an array */
-	
+
 	return luaL_error(state, ERRORSTR("@lugi_newindex_array: Invalid type for an array index (%s), must be an integer or a string convertible to an integer"), lua_typename(state, lua_type(state, 2)));
 }
 
@@ -1250,20 +1250,20 @@ static int lugi_newindex_array(lua_State *state) {
 static int lugi_concat_array(lua_State *state) {
 	BBArray *l = lua_tobmaxarray(state, 1);
 	BBArray *r = lua_tobmaxarray(state, 2);
-	
+
 	if ( (BBObject*)r == &bbNullObject ) {
 		r = &bbEmptyArray;
 	}
-	
+
 	if ( l->clas != &bbArrayClass || r->clas != &bbArrayClass ) {
 		luaL_error(state, ERRORSTR("@lugi_concat_array: Both objects are not arrays."));
 	}
-	
+
 	if ( r == &bbEmptyArray || strcmp(l->type, r->type) == 0 ) {
 		lua_pushbmaxobject(state, (BBObject*)bbArrayConcat(l->type, l, r));
 		return 1;
 	}
-	
+
 	luaL_error(state, ERRORSTR("@lugi_concat_array: Invalid array types."));
 	return 0;
 }
@@ -1290,7 +1290,7 @@ int p_lugi_new_object(lua_State *state) {
 */
 int lugi_sendmessage_object(lua_State *state) {
 	int top = lua_gettop(state);
-	
+
 	if (2 < top || 3 < top) {
 		/* try to provide somewhat useful error messages */
 		if (top < 1) {
@@ -1303,14 +1303,14 @@ int lugi_sendmessage_object(lua_State *state) {
 			return luaL_error(state, ERRORSTR("@p_lugi_sendmessage_object: Too many arguments (%d for 2) for Object#SendMessage"), (top-1));
 		}
 	}
-	
+
 	BBObject *receiver = lua_tobmaxobject(state, 1);
 	BBObject *message = lua_tobmaxobject(state, 2);
 	BBObject *context = &bbNullObject;
-	
+
 	if (top == 3)
 		context = lua_tobmaxobject(state, 3);
-	
+
 	return 1;
 }
 
@@ -1326,7 +1326,7 @@ int lugi_tostring_object(lua_State *state) {
 			return luaL_error(state, ERRORSTR("@p_lugi_tostring_object: Too many arguments (%d for 0) to Object#ToString"), (top-1));
 		}
 	}
-	
+
 	BBObject *receiver = lua_tobmaxobject(state, 1);
 	lua_pushbmaxobject(state, (BBObject*)receiver->clas->ToString(receiver));
 	return 1;
@@ -1347,10 +1347,10 @@ int lugi_compare_object(lua_State *state) {
 			return luaL_error(state, ERRORSTR("@p_lugi_compare_object: Too many arguments (%d for 1) for Object#Compare"), (top-1));
 		}
 	}
-	
+
 	BBObject *receiver = lua_tobmaxobject(state, 1);
 	lua_pushinteger(state, receiver->clas->Compare(receiver, lua_tobmaxobject(state, 2)));
-	
+
 	return 1;
 }
 
@@ -1383,9 +1383,9 @@ static int lugi_slice_array(lua_State *state) {
 	else if ( top > 3 ) {
 		return luaL_error(state, ERRORSTR("@lugi_slice_array: Too many arguments to Slice(from, to)"));
 	}
-	
+
 	BBArray *arr = lua_tobmaxarray(state, 1);
-	
+
 	lua_Integer beg, end;
 	beg = lua_tointeger(state, 2);
 	end = lua_tointeger(state, 3);
@@ -1397,7 +1397,7 @@ static int lugi_slice_array(lua_State *state) {
 
 static int lugi_type_array(lua_State *state) {
 	BBArray *arr = lua_tobmaxarray(state, 1);
-	
+
 	switch (arr->type[0]) {
 		case 'b':	/* byte */
 		lua_pushliteral(state, "byte");
@@ -1415,16 +1415,16 @@ static int lugi_type_array(lua_State *state) {
 		case 'd':
 		lua_pushliteral(state, "double");
 		break;
-		
+
 		case '$':	/* string */
 		lua_pushliteral(state, "string");
 		break;
-		
+
 		default:	/* some type of object */
 		lua_pushstring(state, arr->type);
 		break;
 	}
-	
+
 	return 1;
 }
 

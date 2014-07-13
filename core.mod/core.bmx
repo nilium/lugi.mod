@@ -65,7 +65,7 @@ Const LUGI_ARRAYFIELD:Int = $0100
 Const LUGI_BOOLFIELDOPT:Int = $8000
 
 Type LuGIInitFunction
-	
+
 	' Registers the callback provided as a pre-init stage routine
 	Method PreInit:LuGIInitFunction(cb(vm:Byte Ptr, rfield(off%, typ%, name$, clas@ Ptr), rmethod(fn:Int(state@ Ptr), name$, clas@ Ptr)), requiresState%=True)
 		_cb = cb
@@ -82,7 +82,7 @@ Type LuGIInitFunction
 		?
 		Return Self
 	End Method
-	
+
 	' Registers the callback provided as a post-init stage routine
 	Method PostInit:LuGIInitFunction(cb(state:Byte Ptr, constructor:Int(state:Byte Ptr)))
 		_cb = cb
@@ -98,29 +98,29 @@ Type LuGIInitFunction
 		?
 		Return Self
 	End Method
-	
+
 	' #region PRIVATE
-	
+
 	Field _cb:Byte Ptr
 	Field _reqState:Int
-	
+
 	Method Pre(vm:Byte Ptr, rfield(off%, typ%, name$, clas@ Ptr), rmethod(fn:Int(state@ Ptr), name$, clas@ Ptr))
 		Local cb(vm:Byte Ptr, rfield(off%, typ%, name$, clas@ Ptr), rmethod(fn:Int(state@ Ptr), name$, clas@ Ptr)) = _cb
 		If Not _reqState Then
-		    p_lugi_preinit_cb.Remove(Self)
-		    cb(Null, rfield, rmethod) ' No VM is passed, since it's not required
+			p_lugi_preinit_cb.Remove(Self)
+			cb(Null, rfield, rmethod) ' No VM is passed, since it's not required
 		Else
-    		cb(vm, rfield, rmethod)
-    	EndIf
+			cb(vm, rfield, rmethod)
+		EndIf
 	End Method
-	
+
 	Method Post(vm:Byte Ptr, constructor:Int(state:Byte Ptr))
 		Local cb(vm:Byte Ptr, constructor:Int(state:Byte Ptr)) = _cb
 		cb(vm, constructor)
 	End Method
-	
+
 	' #endregion
-	
+
 End Type
 
 Private
@@ -159,9 +159,9 @@ End Function
 Extern "C"
 	Function p_lugi_register_method(fn:Int(state@ Ptr), name$, clas@ Ptr=Null)
 	Function p_lugi_register_field(off%, typ%, name$, clas@ Ptr)
-	
+
 	Function p_lugi_init(state@ Ptr)
-	
+
 	' Constructor object - push with BBClass for type as upvalue
 	Function p_lugi_new_object:Int(state@ Ptr)
 End Extern
@@ -171,11 +171,11 @@ Public
 Extern "C"
 	' Determining if an object on the stack is a BMax object
 	Function lua_isbmaxobject:Int(state@ Ptr, index:Int)
-	
+
 	' Pushing/getting BBObjects (BBObjects, BBStrings, and BBArrays to tables/tables to BBArrays respectively)
 	Function lua_pushbmaxobject(state@ Ptr, obj:Object)
 	Function lua_tobmaxobject:Object(state@ Ptr, index:Int)
-	
+
 	' Pushing/getting BBArrays (BBArrays to tables/tables to BBArrays respectively)
 	' @arr has to be treated as an Object in BMax since passing an Int[] as an Object[] doesn't work
 	Function lua_pushbmaxarray(state@ Ptr, arr:Object)
